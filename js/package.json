@@ -1,0 +1,42 @@
+{
+    "name": "jupyter-leaflet-car",
+    "version": "0.0.1",
+    "description": "jupyter - leaflet bridge for CAR maps",
+    "keywords": [
+        "jupyter",
+        "jupyterlab",
+        "jupyterlab-extension",
+        "widgets"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/simonsobs/psplay.git"
+    },
+    "license": "MIT",
+    "author": "Simons Observatory Collaboration Power Spectrum Task Force",
+    "main": "src/index.js",
+    "scripts": {
+        "build": "webpack",
+        "clean": "rimraf dist/ && rimraf ../psplay/static",
+        "prepublish": "npm run clean && npm run build",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "watch": "webpack --watch"
+    },
+    "dependencies": {
+        "@jupyter-widgets/base": "^2 || ^3",
+        "jupyter-leaflet": "^0.12.4"
+    },
+    "devDependencies": {
+        "css-loader": "^3.4.2",
+        "file-loader": "^5.0.2",
+        "install": "^0.13.0",
+        "npm": "^6.13.6",
+        "rimraf": "^2.6.1",
+        "style-loader": "^1.1.2",
+        "webpack": "^4.41.5",
+        "webpack-cli": "^3.3.10"
+    },
+    "jupyterlab": {
+        "extension": "src/jupyterlab-plugin"
+    }
+}

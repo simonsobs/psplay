@@ -11,6 +11,8 @@ var status = require('./controls/StatusBarControl.js');
 //Geo
 var car = require('./geo/crs/CRS.CAR.js')
 
+//Misc
+var misc = require('./misc.js')
 
 //Exports
 module.exports = {

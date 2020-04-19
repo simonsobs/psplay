@@ -132,7 +132,8 @@ setup_args = {
         'ipywidgets>=7.5.0,<8',
         'traittypes>=0.2.1,<3',
         'ipyleaflet==0.12.3',
-        'pspy>=1.3.0'
+        'pspy>=1.3.0',
+        'pyyaml'
     ],
     'packages': find_packages(),
     'zip_safe': False,

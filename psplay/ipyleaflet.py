@@ -37,6 +37,9 @@ class ColorizableTileLayer(LocalTileLayer):
     value_max = CFloat(+500).tag(sync=True, o=True)
     scale = CFloat(1.0).tag(sync=True, o=True)
 
+    def __lt__(self, other):
+        return self.name[-1] < other.name[-1]
+
 
 class StatusBarControl(Control):
     _view_name = Unicode('LeafletStatusBarControlView').tag(sync=True)

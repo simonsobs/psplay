@@ -132,7 +132,7 @@ setup_args = {
         'ipywidgets>=7.5.0,<8',
         'traittypes>=0.2.1,<3',
         'ipyleaflet==0.12.4',
-        'pspy>=1.3.0',
+        'pspy @ git+https://github.com/simonsobs/pspy@master#egg=pspy',
         'plotly>=4.6.0',
         'pyyaml'
     ],

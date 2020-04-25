@@ -87,7 +87,7 @@ var _round = function(num, len) {
 };
 // Helper method to format LatLng object (x.xxxxxx, y.yyyyyy)
 var _strLatLng = function(latlng) {
-    return "("+_round(latlng.lat, 6)+"°, "+_round(latlng.lng, 6)+"°)";
+    return _round(latlng.lat, 6) + "°, " + _round(latlng.lng, 6) + "°";
 };
 
 // Add popup to layer
@@ -100,14 +100,19 @@ L.FeatureGroup.include({
         if (layer instanceof L.Circle) {
             center = layer.getLatLng();
             area = L.GeometryUtil.formattedNumber(Math.PI * layer.getRadius()**2, 2);
-        } else if (layer instanceof L.Polygon) {
+        } else if (layer instanceof L.Rectangle) {
             var latlngs = layer._defaultShape ? layer._defaultShape() : layer.getLatLngs(),
                 area = L.GeometryUtil.geodesicArea(latlngs);
             area = L.GeometryUtil.formattedNumber(area, 2);
-            center = L.LatLng(latlngs[0].lat - latlngs[2].lat, latlngs[0].lng - latlngs[2].lng);
+            center = L.latLng((latlngs[0].lat + latlngs[2].lat)/2, (latlngs[0].lng + latlngs[2].lng)/2);
         }
-        content += "<font size=\"-3\">Area: " + area + " deg.²<br/>"
-        content += "Center: " + _strLatLng(center) + "</font></p>";
+        if (area) {
+            content += "<font size=\"-3\">Area: " + area + " deg.²<br/>"
+        }
+        if (content) {
+            content += "Center: " + _strLatLng(center);
+        }
+        content += "</font></p>";
         // layer.bindTooltip(content, {permanent: true, direction: "top", offset: [0, 0]});
         layer.bindTooltip(content, {sticky: true});
         return this.baseAddLayer(layer);

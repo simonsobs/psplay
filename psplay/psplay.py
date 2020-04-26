@@ -228,7 +228,8 @@ class App:
             value="{}x{}".format(*self.map_ids),
             options=["{}x{}".format(*p) for p in product(self.map_ids, repeat=2)],
         )
-        header = widgets.HBox([self.spectra_menu, self.split_menu])
+        self.patch_menu = widgets.Dropdown(description="Patch:", options=self.patches.keys())
+        self.header = widgets.HBox([self.spectra_menu, self.split_menu])
 
         # Config
         layout = widgets.Layout(width="auto", height="auto")
@@ -243,7 +244,13 @@ class App:
         )
 
         def _update_method(_):
-            self.plot_theory.disabled = self.ps_method.value == "2dflat"
+            if self.ps_method.value == "2dflat":
+                self.plot_theory.disabled = True
+                self.header.children = tuple(list(self.header.children) + [self.patch_menu])
+            else:
+                self.plot_theory.disabled = False
+                if len(self.header.children) == 3:
+                    self.header.children = self.header.children[:-1]
 
         self.ps_method.observe(_update_method, names="value")
 
@@ -289,7 +296,7 @@ class App:
         self.clean_button.on_click(_clean_patches)
         footer = widgets.HBox([self.clean_button, self.compute_button])
 
-        self.p = widgets.VBox([header, self.fig, accordion, footer])
+        self.p = widgets.VBox([self.header, self.fig, accordion, footer])
 
     @out.capture()
     def _compute_spectra(self, _):
@@ -353,6 +360,8 @@ class App:
             self.spectra_menu.observe(self._update_plot, names="value")
             self.split_menu.options = spec_name_list
             self.split_menu.observe(self._update_plot, names="value")
+            self.patch_menu.options = self.patches.keys()
+            self.patch_menu.observe(self._update_plot, names="value")
 
             self._update_plot(None)
 

@@ -17,7 +17,17 @@ from .ps_tools import compute_ps
 
 so_attribution = '&copy; <a href="https://simonsobservatory.org/">Simons Observatory</a>'
 
-allowed_spectra = ["TT", "TE", "TB", "ET", "BT", "EE", "EB", "BE", "BB"]
+
+def generate_default_colorscale(default="planck"):
+    from pixell import colorize
+
+    cs = colorize.schemes[default]
+    return [[val, "rgb({},{},{})".format(*cols)] for val, cols in zip(cs.vals, cs.cols)]
+
+
+default_colorscale = generate_default_colorscale()
+
+out = widgets.Output()
 
 
 class App:
@@ -36,6 +46,7 @@ class App:
         self._add_layers()
         self._add_map()
         self._add_plot()
+        self._add_theory()
 
     def show_map(self):
         return self.m
@@ -186,62 +197,95 @@ class App:
         cmap.observe(on_cmap_change, names="value")
         self.m.add_control(WidgetControl(widget=cmap, position="bottomright"))
 
+    def _add_theory(self):
+        clth = {}
+        lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
+            "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat", unpack=True
+        )
+        clth["ET"] = clth["TE"]
+        for spec in ["EB", "BE", "BT", "TB"]:
+            clth[spec] = clth["TE"] * 0
+        self.theory = {"lth": lth, "clth": clth}
+
     def _add_plot(self):
+        self.fig = go.FigureWidget(layout=go.Layout(height=600))
+
         from itertools import product
 
         # Header
+        allowed_spectra = ["TT", "TE", "TB", "ET", "BT", "EE", "EB", "BE", "BB"]
         self.spectra_menu = widgets.Dropdown(description="Spectra:", options=allowed_spectra)
-        self.spectra_menu.observe(self._update_plot, names="value")
         self.split_menu = widgets.Dropdown(
             description="Split:",
             value="{}x{}".format(*self.map_ids),
             options=["{}x{}".format(*p) for p in product(self.map_ids, repeat=2)],
         )
-        self.split_menu.observe(self._update_plot, names="value")
         header = widgets.HBox([self.spectra_menu, self.split_menu])
 
         # Config
+        layout = widgets.Layout(width="auto", height="auto")
+        self.compute_T_only = widgets.Checkbox(value=False, description="Temp. only", layout=layout)
+        self.plot_theory = widgets.Checkbox(value=True, description="Plot theory", layout=layout)
+        self.plot_theory.observe(self._update_theory, names="value")
+        self.ps_method = widgets.RadioButtons(
+            options=["master", "pseudo", "2dflat"],
+            value="master",
+            description="Method:",
+            layout=layout,
+        )
+
+        def _update_method(_):
+            self.plot_theory.disabled = self.ps_method.value == "2dflat"
+
+        self.ps_method.observe(_update_method, names="value")
+
+        self.error_method = widgets.RadioButtons(
+            options=["master", "knox"], value="master", description="Error:", layout=layout
+        )
+        self.lmax = widgets.IntSlider(
+            value=1000, min=0, max=10000, step=100, description="$\ell_\mathrm{max}$",
+        )
+        self.bin_size = widgets.IntSlider(
+            value=40, min=0, max=100, step=10, description="Bin size",
+        )
+        container = widgets.HBox(
+            [
+                widgets.VBox([self.compute_T_only, self.plot_theory]),
+                self.ps_method,
+                self.error_method,
+                widgets.VBox([self.lmax, self.bin_size]),
+            ]
+        )
+        accordion = widgets.Accordion(children=[container, out], selected_index=None)
+        accordion.set_title(0, "Configuration")
+        accordion.set_title(1, "Logs")
+
+        # Footer
         self.compute_button = widgets.Button(description="Compute spectra", icon="check")
         self.clean_button = widgets.Button(description="Clean patches", icon="trash-alt")
 
-        def clean_patches(_):
+        def _clean_patches(_):
             for k in list(self.patches.keys()):
                 del self.patches[k]
             self.draw_control.clear()
-            print("Patches cleaned")
+            self.clean_button.description = "Clean patches ({})".format(len(self.patches))
 
         self.compute_button.on_click(self._compute_spectra)
-        self.clean_button.on_click(clean_patches)
+        self.clean_button.on_click(_clean_patches)
         footer = widgets.HBox([self.clean_button, self.compute_button])
-        # self.master_check = widgets.Checkbox(value=True, description="master")
-        # self.pseudo_check = widgets.Checkbox(value=True, description="pseudo")
-        # self.lmax_bound = widgets.BoundedIntText(
-        #     value=1000, min=0, max=10000, step=100, description="$\ell_\mathrm{max}$"
-        # )
-        # self.config = widgets.HBox(
-        #     [
-        #         widgets.VBox(
-        #             [
-        #                 # widgets.Label(value="Methods:"),
-        #                 self.master_check,
-        #                 self.pseudo_check,
-        #             ],
-        #             layout=widgets.Layout(width="100px"),
-        #         ),
-        #         self.lmax_bound,
-        #         self.clean_button,
-        #         self.process_button,
-        #     ]
-        # )
-        self.fig = go.FigureWidget(layout=go.Layout(height=600))
-        self.p = widgets.VBox([header, self.fig, footer])
 
+        self.p = widgets.VBox([header, self.fig, accordion, footer])
+
+    @out.capture()
     def _compute_spectra(self, _):
+        out.clear_output()
         spectra = None
 
         self.compute_button.description = "Running..."
         self.compute_button.icon = "gear"
+        self.compute_button.disabled = True
         self.clean_button.disabled = True
+        self.clean_button.description = "Clean patches ({})".format(len(self.patches))
 
         def parse_rectangle(coordinates):
             return [coordinates[0][0][::-1], coordinates[0][2][::-1]]
@@ -270,7 +314,13 @@ class App:
                 continue
 
             spectra, spec_name_list, lb, ps_dict, cov_dict = compute_ps(
-                patch_dict, self.maps_info_list, bin_size=40, lmax=1000
+                patch_dict,
+                self.maps_info_list,
+                ps_method=self.ps_method.value,
+                error_method=self.error_method.value,
+                bin_size=self.bin_size.value,
+                compute_T_only=self.compute_T_only.value,
+                lmax=self.lmax.value,
             )
             patch.update(
                 {
@@ -285,34 +335,86 @@ class App:
             )
         if spectra is not None:
             self.spectra_menu.options = spectra
+            self.spectra_menu.observe(self._update_plot, names="value")
             self.split_menu.options = spec_name_list
-            _update_plot(None)
+            self.split_menu.observe(self._update_plot, names="value")
+
+            self._update_plot(None)
 
         self.compute_button.description = "Compute spectra"
         self.compute_button.icon = "check"
+        self.compute_button.disabled = False
         self.clean_button.disabled = False
 
-    def _update_plot(self, change):
+    def _update_theory(self, _):
+        if self.plot_theory.value:
+            self.fig.add_scatter(
+                name="theory",
+                x=self.theory.get("lth")[: self.lmax.value],
+                y=self.theory.get("clth")[self.spectra_menu.value][: self.lmax.value],
+                mode="lines",
+                line=dict(color="gray"),
+            )
+        else:
+            # Remove last trace
+            self.fig.data = self.fig.data[:-1]
+
+    def _update_plot(self, _):
         split_name = self.split_menu.value
         spec = self.spectra_menu.value
+        ps_method = self.ps_method.value
+
+        # Clean data & layout
         self.fig.data = []
-        self.fig.update_layout(
-            title=split_name, xaxis_title="$\ell$", yaxis_title="$D_\ell^\mathrm{%s}$" % spec,
-        )
-        for name, patch in self.patches.items():
+        self.fig.layout = {}
+        self.fig._grid_ref = None
+        if ps_method == "2dflat":
+            from plotly.subplots import make_subplots
+            from plotly.colors import qualitative
+
+            npatch = len(self.patches)
+            subplots = make_subplots(
+                rows=min(npatch, npatch // 2),
+                cols=min(npatch, 2),
+                subplot_titles=list(self.patches.keys()),
+                # shared_xaxes=True,
+                # shared_yaxes=True,
+            )
+            # Fix the grid reference
+            self.fig._grid_ref = subplots._grid_ref
+            self.fig.update_layout(subplots.layout)
+            self.fig.update_layout(
+                title=split_name, coloraxis={"colorscale": default_colorscale},
+            )
+            for i, title in enumerate(self.fig.layout.annotations):
+                title.font.color = qualitative.Plotly[i]
+        else:
+            self.fig.update_layout(
+                title=split_name, xaxis_title="$\ell$", yaxis_title="$D_\ell^\mathrm{%s}$" % spec,
+            )
+
+        for ipatch, (name, patch) in enumerate(self.patches.items()):
             results = patch.get("results")
             if not results:
                 continue
-            x = results.get("lb")
-            y = results.get("ps").get(split_name).get(spec)
-            yerr = np.sqrt(np.diag(results.get("cov").get(split_name).get(spec)))
-            self.fig.add_scatter(
-                name=name,
-                x=x,
-                y=y,
-                error_y=dict(
-                    type="data",  # value of error bar given in data coordinates
-                    array=yerr,
-                    visible=True,
-                ),
-            )
+            if ps_method == "2dflat":
+                powermap = results.get("ps").get(split_name).powermap[spec]
+                powermap = np.fft.fftshift(powermap.copy())
+                self.fig.add_trace(
+                    go.Heatmap(z=powermap, coloraxis="coloraxis"),
+                    row=ipatch // 2 + 1,
+                    col=ipatch % 2 + 1,
+                )
+            else:
+                x = results.get("lb")
+                y = results.get("ps").get(split_name).get(spec)
+                yerr = np.sqrt(np.diag(results.get("cov").get(split_name).get(spec)))
+                self.fig.add_scatter(
+                    name=name,
+                    x=x,
+                    y=y,
+                    error_y={"type": "data", "array": yerr, "visible": True},
+                    mode="markers",
+                )
+        if ps_method != "2dflat":
+            self._update_theory(None)

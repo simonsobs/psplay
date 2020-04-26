@@ -120,7 +120,7 @@ L.FeatureGroup.include({
     baseRemoveLayer: L.FeatureGroup.prototype.removeLayer,
     removeLayer: function (layer) {
         console.log("Remove patch");
-        ipatch--;
+        ipatch = 0;
         return this.baseRemoveLayer(layer);
     }
 });

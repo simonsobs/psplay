@@ -208,7 +208,7 @@ class App:
         self.theory = {"lth": lth, "clth": clth}
 
     def _add_plot(self):
-        self.fig = go.FigureWidget(layout=go.Layout(height=600))
+        self.fig = go.FigureWidget(layout=go.Layout(height=600, template="plotly_white"))
 
         from itertools import product
 
@@ -368,6 +368,7 @@ class App:
         self.fig.data = []
         self.fig.layout = {}
         self.fig._grid_ref = None
+        self.fig.update_layout({"template": "plotly_white"})
         if ps_method == "2dflat":
             from plotly.subplots import make_subplots
             from plotly.colors import qualitative

@@ -2,6 +2,7 @@
 # Distributed under the terms of the Modified BSD License.
 #
 import os
+from itertools import product
 
 import ipywidgets as widgets
 import numpy as np
@@ -15,9 +16,10 @@ from .ipyleaflet import (ColorizableTileLayer, Graticule, StatusBarControl,
                          allowed_colormaps)
 from .ps_tools import compute_ps
 
+# Default SO attribution for tiles
 so_attribution = '&copy; <a href="https://simonsobservatory.org/">Simons Observatory</a>'
 
-
+# Generate default plotly colormap based on planck colormap
 def generate_default_colorscale(default="planck"):
     from pixell import colorize
 
@@ -27,10 +29,13 @@ def generate_default_colorscale(default="planck"):
 
 default_colorscale = generate_default_colorscale()
 
+# Output widget to catch functions/programs output into a widget
 out = widgets.Output()
 
 
 class App:
+    """ An ipywidgets and plotly application for CMB map and power spectra visualization"""
+
     def __init__(self, config):
         if isinstance(config, dict):
             self.config = config
@@ -208,9 +213,12 @@ class App:
         self.theory = {"lth": lth, "clth": clth}
 
     def _add_plot(self):
-        self.fig = go.FigureWidget(layout=go.Layout(height=600, template="plotly_white"))
+        plot_config = self.config.get("plot", dict())
+        plotly_config = plot_config.get("plotly", dict())
 
-        from itertools import product
+        self.fig = go.FigureWidget(
+            layout=go.Layout(height=600, template=plotly_config.get("template", "plotly_white"))
+        )
 
         # Header
         allowed_spectra = ["TT", "TE", "TB", "ET", "BT", "EE", "EB", "BE", "BB"]
@@ -229,7 +237,7 @@ class App:
         self.plot_theory.observe(self._update_theory, names="value")
         self.ps_method = widgets.RadioButtons(
             options=["master", "pseudo", "2dflat"],
-            value="master",
+            value=plot_config.get("method", "master"),
             description="Method:",
             layout=layout,
         )
@@ -240,13 +248,20 @@ class App:
         self.ps_method.observe(_update_method, names="value")
 
         self.error_method = widgets.RadioButtons(
-            options=["master", "knox"], value="master", description="Error:", layout=layout
+            options=["master", "knox"],
+            value=plot_config.get("error", "master"),
+            description="Error:",
+            layout=layout,
         )
         self.lmax = widgets.IntSlider(
-            value=1000, min=0, max=10000, step=100, description="$\ell_\mathrm{max}$",
+            value=plot_config.get("lmax", 1000),
+            min=0,
+            max=10000,
+            step=100,
+            description="$\ell_\mathrm{max}$",
         )
         self.bin_size = widgets.IntSlider(
-            value=40, min=0, max=100, step=10, description="Bin size",
+            value=plot_config.get("bin size", 40), min=0, max=100, step=10, description="Bin size",
         )
         container = widgets.HBox(
             [

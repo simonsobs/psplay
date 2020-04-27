@@ -100,16 +100,10 @@ class App:
                     vrange[1][i] = _val if _val else vrange[1][i]
                     vrange[2][i] = vrange[1][i] if _val else vrange[2][i]
 
-            for i, item in enumerate(data_type):
-                name = "{} - {} - {}".format(tiles.get("prefix", "CMB"), map_id, item)
-                url = (
-                    path
-                    if ".png" in path
-                    else "files/" + os.path.join(path, fits, "{z}/tile_{y}_{x}_%s.png" % i)
-                )
+            if any(s in path for s in [".png", "http"]):
                 self.layers.append(
                     ColorizableTileLayer(
-                        url=url,
+                        url=path,
                         base=True,
                         min_zoom=-5,
                         max_zoom=+5,
@@ -117,13 +111,34 @@ class App:
                         max_native_zoom=0,
                         tile_size=675,
                         attribution=tiles.get("attribution", so_attribution),
-                        name=name,
+                        name=tiles.get("name", ""),
                         show_loading=False,
                         colormap=tiles.get("colormap", "planck"),
                         value_min=vrange[i][0],
                         value_max=vrange[i][1],
                     )
                 )
+            else:
+                for i, item in enumerate(data_type):
+                    name = "{} - {} - {}".format(tiles.get("prefix", "CMB"), map_id, item)
+                    url = "files/" + os.path.join(path, fits, "{z}/tile_{y}_{x}_%s.png" % i)
+                    self.layers.append(
+                        ColorizableTileLayer(
+                            url=url,
+                            base=True,
+                            min_zoom=-5,
+                            max_zoom=+5,
+                            min_native_zoom=-5,
+                            max_native_zoom=0,
+                            tile_size=675,
+                            attribution=tiles.get("attribution", so_attribution),
+                            name=name,
+                            show_loading=False,
+                            colormap=tiles.get("colormap", "planck"),
+                            value_min=vrange[i][0],
+                            value_max=vrange[i][1],
+                        )
+                    )
         # if maps.get("sort", True):
         self.layers.sort()
 

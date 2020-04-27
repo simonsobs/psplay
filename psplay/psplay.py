@@ -312,10 +312,20 @@ class App:
         def parse_rectangle(coordinates):
             return [coordinates[0][0][::-1], coordinates[0][2][::-1]]
 
-        for name, patch in self.patches.items():
-            print("Compute new patch")
-            if patch is None:
+        for ipatch, (name, patch) in enumerate(self.patches.items()):
+            print("Compute patch #{}".format(ipatch))
+            config = {
+                "ps_method": self.ps_method.value,
+                "error_method": self.error_method.value,
+                "bin_size": self.bin_size.value,
+                "compute_T_only": self.compute_T_only.value,
+                "lmax": self.lmax.value,
+            }
+            if patch.get("config") == config:
+                print("Patch already processed under the same condition")
                 continue
+            patch.update({"config": config})
+
             patch_dict = None
             geometry = patch.get("geometry")
             if geometry.get("type") == "Polygon":
@@ -418,7 +428,7 @@ class App:
                 title=split_name, xaxis_title="$\ell$", yaxis_title="$D_\ell^\mathrm{%s}$" % spec,
             )
 
-            for ipatch, (name, patch) in enumerate(self.patches.items()):
+            for name, patch in self.patches.items():
                 results = patch.get("results")
                 if not results:
                     continue

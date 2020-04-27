@@ -125,6 +125,9 @@ class NPM(Command):
         update_package_data(self.distribution)
 
 
+with open("README.rst") as readme_file:
+    readme = readme_file.read()
+
 setup_args = {
     "name": "psplay",
     "version": "0.0.1",
@@ -136,7 +139,7 @@ setup_args = {
         "ipywidgets>=7.5.0",
         "traittypes>=0.2.1",
         "ipyleaflet==0.12.4",
-        "pspy @ git+https://github.com/simonsobs/pspy@master#egg=pspy",
+        "pspy>=1.3.1",
         "plotly>=4.6.0",
         "pyyaml",
     ],
@@ -150,13 +153,14 @@ setup_args = {
     },
     "author": "Simons Observatory Collaboration Power Spectrum Task Force",
     "url": "https://github.com/simonsobs/psplay",
+    "long_description": readme,
     "keywords": ["CMB", "spectra", "ipython", "jupyter", "widgets", "graphics"],
     "classifiers": [
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Topic :: Multimedia :: Graphics",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

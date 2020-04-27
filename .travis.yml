@@ -1,7 +1,7 @@
 language: generic
 os:
   - linux
-  - osx
+  # - osx
 env:
  matrix:
   - PYTHON_VERSION=3.6

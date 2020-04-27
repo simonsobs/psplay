@@ -162,7 +162,7 @@ def compute_mode_coupling(
 
     if beam is not None:
         beam_data = np.loadtxt(beam)
-        if compute_T_only == True:
+        if compute_T_only:
             beam = beam_data[:, 1]
         else:
             beam = (beam_data[:, 1], beam_data[:, 1])
@@ -371,7 +371,6 @@ def get_covariance(
     """
 
     bin_lo, bin_hi, bin_c, bin_size = pspy_utils.read_binning_file(binning_file, lmax)
-    n_bins = len(bin_hi)
 
     fsky = enmap.area(window.data.shape, window.data.wcs) / 4.0 / np.pi
     fsky *= np.mean(window.data)

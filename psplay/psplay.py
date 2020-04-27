@@ -19,6 +19,7 @@ from .ps_tools import compute_ps
 # Default SO attribution for tiles
 so_attribution = '&copy; <a href="https://simonsobservatory.org/">Simons Observatory</a>'
 
+
 # Generate default plotly colormap based on planck colormap
 def generate_default_colorscale(default="planck"):
     from pixell import colorize
@@ -280,7 +281,7 @@ class App:
             min=0,
             max=10000,
             step=100,
-            description="$\ell_\mathrm{max}$",
+            description=r"$\ell_\mathrm{max}$",
         )
         self.bin_size = widgets.IntSlider(
             value=plot_config.get("bin size", 40), min=0, max=100, step=10, description="Bin size",
@@ -432,15 +433,15 @@ class App:
                     text="{} - {}".format(split_name, patch_name),
                     font=dict(color=qualitative.Plotly[list(self.patches).index(patch_name)]),
                 ),
-                xaxis_title="$\ell_X$",
-                yaxis_title="$\ell_Y$",
+                xaxis_title=r"$\ell_X$",
+                yaxis_title=r"$\ell_Y$",
                 coloraxis={"colorscale": default_colorscale},
             )
             self.fig.add_heatmap(z=powermap, coloraxis="coloraxis")
 
         else:
             self.fig.update_layout(
-                title=split_name, xaxis_title="$\ell$", yaxis_title="$D_\ell^\mathrm{%s}$" % spec,
+                title=split_name, xaxis_title=r"$\ell$", yaxis_title=r"$D_\ell^\mathrm{%s}$" % spec,
             )
 
             for name, patch in self.patches.items():

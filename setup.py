@@ -130,7 +130,7 @@ with open("README.rst") as readme_file:
 
 setup_args = {
     "name": "psplay",
-    "version": "0.0.0",
+    "version": "0.0.2",
     "description": "A Jupyter widget for playing with CAR Leaflet maps",
     "license": "BSD License",
     "include_package_data": True,

@@ -74,20 +74,20 @@ Note for developers:
 - the ``--symlink`` argument on Linux or OS X allows one to modify the JavaScript code
   in-place. This feature is not available with Windows.
 
-    For automatically building the JavaScript code every time there is a change, run the following
-    command from the ``psplay/js/`` directory:
+For automatically building the JavaScript code every time there is a change, run the following
+command from the ``psplay/js/`` directory:
 
-    .. code:: shell
+.. code:: shell
 
-       $ npm run watch
-
-
-    If you are on JupyterLab you also need to run the following in a separate terminal:
-
-    .. code:: shell
-
-       $ jupyter lab --watch
+   $ npm run watch
 
 
-    Every time a JavaScript build has terminated you need to refresh the Notebook page in order to
-    load the JavaScript code again.
+If you are on JupyterLab you also need to run the following in a separate terminal:
+
+.. code:: shell
+
+   $ jupyter lab --watch
+
+
+Every time a JavaScript build has terminated you need to refresh the Notebook page in order to load
+the JavaScript code again.

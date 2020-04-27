@@ -9,6 +9,8 @@ CMB power spectra.
 
 .. image:: https://img.shields.io/pypi/v/psplay.svg?style=flat
    :target: https://pypi.python.org/pypi/psplay/
+.. image:: https://travis-ci.com/xgarrido/psplay.svg?branch=master
+   :target: https://travis-ci.com/xgarrido/psplay
 
 All the specific javascript library developed for ``psplay`` is done by `Sigurd Naess
 <https://github.com/amaurea>`_. The build and javscript architecture is highly inspired by

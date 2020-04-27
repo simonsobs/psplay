@@ -312,10 +312,20 @@ class App:
         def parse_rectangle(coordinates):
             return [coordinates[0][0][::-1], coordinates[0][2][::-1]]
 
-        for name, patch in self.patches.items():
-            print("Compute new patch")
-            if patch is None:
+        for ipatch, (name, patch) in enumerate(self.patches.items()):
+            print("Compute patch #{}".format(ipatch))
+            config = {
+                "ps_method": self.ps_method.value,
+                "error_method": self.error_method.value,
+                "bin_size": self.bin_size.value,
+                "compute_T_only": self.compute_T_only.value,
+                "lmax": self.lmax.value,
+            }
+            if patch.get("config") == config:
+                print("Patch already processed under the same condition")
                 continue
+            patch.update({"config": config})
+
             patch_dict = None
             geometry = patch.get("geometry")
             if geometry.get("type") == "Polygon":
@@ -390,47 +400,38 @@ class App:
 
         # Clean data & layout
         self.fig.data = []
-        self.fig.layout = {}
-        self.fig._grid_ref = None
-        self.fig.update_layout({"template": "plotly_white"})
+        # self.fig.layout = {}
         if ps_method == "2dflat":
-            from plotly.subplots import make_subplots
             from plotly.colors import qualitative
 
-            npatch = len(self.patches)
-            subplots = make_subplots(
-                rows=min(npatch, npatch // 2),
-                cols=min(npatch, 2),
-                subplot_titles=list(self.patches.keys()),
-                # shared_xaxes=True,
-                # shared_yaxes=True,
-            )
-            # Fix the grid reference
-            self.fig._grid_ref = subplots._grid_ref
-            self.fig.update_layout(subplots.layout)
+            patch_name = self.patch_menu.value
+            results = self.patches[patch_name].get("results")
+            if not results:
+                return
+            powermap = results.get("ps").get(split_name).powermap[spec]
+            powermap = np.fft.fftshift(powermap.copy())
+            shape = powermap.shape
             self.fig.update_layout(
-                title=split_name, coloraxis={"colorscale": default_colorscale},
+                width=self.fig.layout.height * shape[1] / shape[0],
+                title=dict(
+                    text="{} - {}".format(split_name, patch_name),
+                    font=dict(color=qualitative.Plotly[list(self.patches).index(patch_name)]),
+                ),
+                xaxis_title="$\ell_X$",
+                yaxis_title="$\ell_Y$",
+                coloraxis={"colorscale": default_colorscale},
             )
-            for i, title in enumerate(self.fig.layout.annotations):
-                title.font.color = qualitative.Plotly[i]
+            self.fig.add_heatmap(z=powermap, coloraxis="coloraxis")
+
         else:
             self.fig.update_layout(
                 title=split_name, xaxis_title="$\ell$", yaxis_title="$D_\ell^\mathrm{%s}$" % spec,
             )
 
-        for ipatch, (name, patch) in enumerate(self.patches.items()):
-            results = patch.get("results")
-            if not results:
-                continue
-            if ps_method == "2dflat":
-                powermap = results.get("ps").get(split_name).powermap[spec]
-                powermap = np.fft.fftshift(powermap.copy())
-                self.fig.add_trace(
-                    go.Heatmap(z=powermap, coloraxis="coloraxis"),
-                    row=ipatch // 2 + 1,
-                    col=ipatch % 2 + 1,
-                )
-            else:
+            for name, patch in self.patches.items():
+                results = patch.get("results")
+                if not results:
+                    continue
                 x = results.get("lb")
                 y = results.get("ps").get(split_name).get(spec)
                 yerr = np.sqrt(np.diag(results.get("cov").get(split_name).get(spec)))
@@ -441,5 +442,4 @@ class App:
                     error_y={"type": "data", "array": yerr, "visible": True},
                     mode="markers",
                 )
-        if ps_method != "2dflat":
             self._update_theory(None)

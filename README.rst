@@ -3,7 +3,7 @@ psplay
 ======
 
 A tool to visualize and play with CMB maps. ``psplay`` is a ``jupyter`` extension to allow
-interactive visualization of CMB maps through [Leaflet](leafletjs.com) library. ``psplay`` also
+interactive visualization of CMB maps through `Leaflet <leafletjs.com>`_ library. ``psplay`` also
 provides a set of tools based on `pspy <https://github.com/simonsobs/pspy>`_ to compute and to show
 CMB power spectra.
 

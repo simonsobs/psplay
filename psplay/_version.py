@@ -2,8 +2,8 @@
 # Distributed under the terms of the Modified BSD License.
 #
 
-version_info = (0, 0, 1)
+version_info = (0, 0, 2)
 
-__version__ = '%s.%s.%s' % (version_info[0], version_info[1], version_info[2])
+__version__ = "{}.{}.{}".format(*version_info)
 
-EXTENSION_VERSION = '^0.0.1'
+EXTENSION_VERSION = "^" + __version__

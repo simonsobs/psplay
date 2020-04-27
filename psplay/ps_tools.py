@@ -385,13 +385,12 @@ def get_covariance(
             for spec in spectra:
                 X, Y = spec
                 prefac = 1 / ((2 * bin_c + 1) * fsky * bin_size)
-                cov_dict[name][X + Y] = np.diag(
-                    prefac
-                    * (
-                        ps_dict["%sx%s" % (m1, m1)][X + X] * ps_dict["%sx%s" % (m2, m2)][Y + Y]
-                        + ps_dict["%sx%s" % (m1, m2)][X + Y] ** 2
-                    )
-                )
+                # fmt: off
+                cov_dict[name][X + Y] = np.diag(prefac * (
+                    ps_dict["%sx%s" % (m1, m1)][X + X] * ps_dict["%sx%s" % (m2, m2)][Y + Y]
+                    + ps_dict["%sx%s" % (m1, m2)][X + Y] ** 2
+                ))
+                # fmt: on
 
     elif error_method == "master":
 

@@ -23,6 +23,7 @@ Installation
 Using pip:
 
 .. code:: shell
+
    $ pip install psplay [--user]
 
 To enable the extension within Jupyter, you will need to install several JupyterLab extensions
@@ -30,6 +31,7 @@ especially the Python ``plotly`` `library <https://plotly.com/python>`_. For Jup
 can do
 
 .. code:: shell
+
    $ jupyter labextension install @plotlywidget@4.6.0 jupyterlab-plotly@4.6.0
 
 
@@ -37,6 +39,7 @@ Finally, you need to install the `jupyter-leaflet-car
 <https://www.npmjs.com/package/jupyter-leaflet-car>`_ and the support for widgets in Jupyter
 
 .. code:: shell
+
    $ jupyter labextension install @jupyter-widgets/jupyterlab-manager jupyter-leaflet-car
 
 
@@ -46,6 +49,7 @@ Installation from sources
 For a development installation (requires `npm <https://www.npmjs.com/get-npm>`_)
 
 .. code:: shell
+
    $ git clone https://github.com/xgarrido/psplay.git
    $ cd psplay
    $ pip install -e .
@@ -53,12 +57,14 @@ For a development installation (requires `npm <https://www.npmjs.com/get-npm>`_)
 If you are using the classic Jupyter Notebook you need to install the nbextension:
 
 .. code:: shell
+
    $ jupyter nbextension install --py --symlink --sys-prefix psplay
    $ jupyter nbextension enable --py --sys-prefix psplay
 
 If you are using JupyterLab, you need to install the labextension:
 
 .. code:: shell
+
    $ jupyter labextension install @jupyter-widgets/jupyterlab-manager js
 
 Note for developers:
@@ -72,12 +78,14 @@ Note for developers:
     command from the ``psplay/js/`` directory:
 
     .. code:: shell
+
        $ npm run watch
 
 
     If you are on JupyterLab you also need to run the following in a separate terminal:
 
     .. code:: shell
+
        $ jupyter lab --watch
 
 

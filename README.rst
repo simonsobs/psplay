@@ -42,7 +42,7 @@ can do
 
 .. code:: shell
 
-   $ jupyter labextension install @plotlywidget@4.6.0 jupyterlab-plotly@4.6.0
+   $ jupyter labextension install plotlywidget@4.6.0 jupyterlab-plotly@4.6.0
 
 
 Finally, you need to install the `jupyter-leaflet-car

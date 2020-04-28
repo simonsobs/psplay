@@ -219,13 +219,15 @@ class App:
         self.m.add_control(WidgetControl(widget=cmap, position="bottomright"))
 
     def _add_theory(self):
+        plot_config = self.config.get("plot", dict())
         clth = {}
         lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
-            "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat", unpack=True
+            plot_config.get("theory", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat"),
+            unpack=True,
         )
         clth["ET"] = clth["TE"]
         for spec in ["EB", "BE", "BT", "TB"]:
-            clth[spec] = clth["TE"] * 0
+            clth[spec] = clth["TE"] * 0.0
         self.theory = {"lth": lth, "clth": clth}
 
     def _add_plot(self):

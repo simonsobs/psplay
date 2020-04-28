@@ -50,7 +50,7 @@ Finally, you need to install the `jupyter-leaflet-car
 
 .. code:: shell
 
-   $ jupyter labextension install @jupyter-widgets/jupyterlab-manager jupyter-leaflet-car
+   $ jupyter labextension install @jupyter-widgets/jupyterlab-manager jupyter-leaflet jupyter-leaflet-car
 
 
 Installation from sources

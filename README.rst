@@ -2,11 +2,6 @@
 psplay
 ======
 
-A tool to visualize and play with CMB maps. ``psplay`` is a ``jupyter`` extension to allow
-interactive visualization of CMB maps through `Leaflet <leafletjs.com>`_ library. ``psplay`` also
-provides a set of tools based on `pspy <https://github.com/simonsobs/pspy>`_ to compute and to show
-CMB power spectra.
-
 .. image:: https://img.shields.io/pypi/v/psplay.svg?style=flat
    :target: https://pypi.python.org/pypi/psplay/
 .. image:: https://img.shields.io/npm/v/jupyter-leaflet-car
@@ -14,12 +9,15 @@ CMB power spectra.
 .. image:: https://travis-ci.com/xgarrido/psplay.svg?branch=master
    :target: https://travis-ci.com/xgarrido/psplay
 
+A tool to visualize and play with CMB maps. ``psplay`` is a ``jupyter`` extension to allow
+interactive visualization of CMB maps through `Leaflet <leafletjs.com>`_ library. ``psplay`` also
+provides a set of tools based on `pspy <https://github.com/simonsobs/pspy>`_ to compute and to show
+CMB power spectra.
+
 All the specific javascript library developed for ``psplay`` is done by `Sigurd Naess
 <https://github.com/amaurea>`_. The build process and javascript architecture is highly inspired by
 `ipyleaflet <https://github.com/jupyter-widgets/ipyleaflet>`_ project.
 
-To convert CMB map from ``FITS`` format to tile images you will also need this kind of `program
-<https://github.com/thibautlouis/sigurds_plot>`_.
 
 Installation
 ------------
@@ -103,3 +101,8 @@ If you are on JupyterLab you also need to run the following in a separate termin
 
 Every time a JavaScript build has terminated you need to refresh the Notebook page in order to load
 the JavaScript code again.
+
+Examples
+--------
+
+* `From healpix map file to psplay <https://github.com/xgarrido/psplay/blob/master/examples/simulation_to_analysis.ipynb>`_

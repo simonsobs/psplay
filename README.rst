@@ -9,6 +9,8 @@ CMB power spectra.
 
 .. image:: https://img.shields.io/pypi/v/psplay.svg?style=flat
    :target: https://pypi.python.org/pypi/psplay/
+.. image:: https://img.shields.io/npm/v/jupyter-leaflet-car
+   :target: https://www.npmjs.com/package/jupyter-leaflet-car
 .. image:: https://travis-ci.com/xgarrido/psplay.svg?branch=master
    :target: https://travis-ci.com/xgarrido/psplay
 

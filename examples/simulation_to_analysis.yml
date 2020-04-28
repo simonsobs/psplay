@@ -1,0 +1,10 @@
+maps:
+  - id: split0
+    fits: split0_IQU_car.fits
+    tiles:
+      path: examples/tiles
+        
+  - id: split1
+    fits: split1_IQU_car.fits
+    tiles:
+      path: examples/tiles

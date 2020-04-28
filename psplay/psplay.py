@@ -122,7 +122,7 @@ class App:
             else:
                 for i, item in enumerate(data_type):
                     name = "{} - {} - {}".format(tiles.get("prefix", "CMB"), map_id, item)
-                    url = "files/" + os.path.join(path, fits, "{z}/tile_{y}_{x}_%s.png" % i)
+                    url = os.path.join("files", path, fits, "{z}/tile_{y}_{x}_%s.png" % i)
                     self.layers.append(
                         ColorizableTileLayer(
                             url=url,

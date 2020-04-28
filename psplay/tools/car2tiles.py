@@ -5,9 +5,16 @@ import numpy as np
 from pixell import enplot, mpi, wcsutils
 from pspy import so_map
 
+from . import tile_utils_sigurd, webplot
+
 
 def car2tiles(
-    input_file, mask_file=None, enplot_args=[], output_dir=None, delete_fits=True, use_webplot=True
+    input_file,
+    mask_file=None,
+    enplot_args=None,
+    output_dir=None,
+    delete_fits=True,
+    use_webplot=True,
 ):
     """ Convert CAR map to PNG tiles
     Parameters
@@ -25,6 +32,8 @@ def car2tiles(
     use_webplot: boolean
       use webplot in place of enplot program
     """
+    enplot_args = enplot_args or []
+
     comm = mpi.COMM_WORLD
     if comm.rank == 0:
         # Check if path to fits file are already stored
@@ -61,8 +70,6 @@ def car2tiles(
     if not mpi.disabled:
         comm.barrier()
 
-    from sigurds_plot import tile_utils_sigurd
-
     tile_utils_sigurd.leaftile(
         input_file,
         output_dir,
@@ -72,8 +79,6 @@ def car2tiles(
     )
 
     if use_webplot:
-        from sigurds_plot import webplot
-
         args = webplot.parse_args(enplot_args)
         webplot.plot(args)
     else:

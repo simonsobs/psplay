@@ -1,13 +1,17 @@
+import numpy as np
+
 from pspy import so_map
 
 
-def healpix2car(input_file,
-                fields=(0, 1, 2),
-                mask_file=None,
-                output_file=None,
-                resolution=0.5,
-                bounding_box=(-180, 180, -75, 30),
-                lmax=6000):
+def healpix2car(
+    input_file,
+    fields=(0, 1, 2),
+    mask_file=None,
+    output_file=None,
+    resolution=0.5,
+    bounding_box=(-180, 180, -75, 30),
+    lmax=6000,
+):
     """ Convert HEALPIX map to CAR map
     Parameters
     ----------
@@ -54,46 +58,58 @@ def healpix2car(input_file,
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(
-        description="A python program to convert HEALPIX map into CAR map")
-    parser.add_argument("-i",
-                        "--input-file",
-                        help="input FITS file corresponding to HEALPIX map",
-                        type=str,
-                        required=True,
-                        default=None)
-    parser.add_argument("-o",
-                        "--output-file",
-                        help="output FITS file corresponding to CAR map",
-                        type=str,
-                        required=True,
-                        default=None)
+        description="A python program to convert HEALPIX map into CAR map"
+    )
+    parser.add_argument(
+        "-i",
+        "--input-file",
+        help="input FITS file corresponding to HEALPIX map",
+        type=str,
+        required=True,
+        default=None,
+    )
+    parser.add_argument(
+        "-o",
+        "--output-file",
+        help="output FITS file corresponding to CAR map",
+        type=str,
+        required=True,
+        default=None,
+    )
     parser.add_argument(
         "-f",
         "--fields",
         help="tuple that enables HEALPIX fields i.e. (0,) will only keep temperature field ",
         type=tuple,
-        default=(0, 1, 2))
-    parser.add_argument("--bounding-box",
-                        help="set the bounding box (ra0, dec0, ra1, dec1) all in degrees",
-                        type=tuple,
-                        default=(-180, 180, -75, 30))
-    parser.add_argument("--resolution",
-                        help="set the resolution in arcminutes",
-                        type=float,
-                        default=0.5)
-    parser.add_argument("--mask-file",
-                        help="set a mask file to apply to HEALPIX map before converting",
-                        type=str,
-                        default=None)
+        default=(0, 1, 2),
+    )
+    parser.add_argument(
+        "--bounding-box",
+        help="set the bounding box (ra0, dec0, ra1, dec1) all in degrees",
+        type=tuple,
+        default=(-180, 180, -75, 30),
+    )
+    parser.add_argument(
+        "--resolution", help="set the resolution in arcminutes", type=float, default=0.5
+    )
+    parser.add_argument(
+        "--mask-file",
+        help="set a mask file to apply to HEALPIX map before converting",
+        type=str,
+        default=None,
+    )
     args = parser.parse_args()
 
-    healpix2car(input_file=args.input_file,
-                fields=[int(i) for i in args.fields],
-                mask_file=args.mask_file,
-                output_file=args.output_file,
-                resolution=args.resolution,
-                bounding_box=args.bounding_box)
+    healpix2car(
+        input_file=args.input_file,
+        fields=[int(i) for i in args.fields],
+        mask_file=args.mask_file,
+        output_file=args.output_file,
+        resolution=args.resolution,
+        bounding_box=args.bounding_box,
+    )
 
 
 # script:

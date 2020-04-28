@@ -6,12 +6,9 @@ from pixell import enplot, mpi, wcsutils
 from pspy import so_map
 
 
-def car2tiles(input_file,
-              mask_file=None,
-              enplot_args=[],
-              output_dir=None,
-              delete_fits=True,
-              use_webplot=True)
+def car2tiles(
+    input_file, mask_file=None, enplot_args=[], output_dir=None, delete_fits=True, use_webplot=True
+):
     """ Convert CAR map to PNG tiles
     Parameters
     ----------
@@ -65,14 +62,18 @@ def car2tiles(input_file,
         comm.barrier()
 
     from sigurds_plot import tile_utils_sigurd
-    tile_utils_sigurd.leaftile(input_file,
-                               output_dir,
-                               verbose="-v" in enplot_args,
-                               comm=comm if not mpi.disabled else None,
-                               monolithic=True)
+
+    tile_utils_sigurd.leaftile(
+        input_file,
+        output_dir,
+        verbose="-v" in enplot_args,
+        comm=comm if not mpi.disabled else None,
+        monolithic=True,
+    )
 
     if use_webplot:
         from sigurds_plot import webplot
+
         args = webplot.parse_args(enplot_args)
         webplot.plot(args)
     else:
@@ -88,41 +89,50 @@ def car2tiles(input_file,
             for fits in args.ifiles:
                 os.remove(fits)
 
+
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(
         description="A python program to produce Sigurd's plots and corresponding html pages",
-        epilog="Additional options will be passed to enplot/webplot program")
-    parser.add_argument("-i",
-                        "--input-file",
-                        help="input FITS file corresponding to CAR map",
-                        type=str,
-                        required=True,
-                        default=None)
-    parser.add_argument("--mask-file",
-                        help="set a mask file to apply to HEALPIX map before converting",
-                        type=str,
-                        default=None)
-    parser.add_argument("--output-dir",
-                        help="output directory holding png files",
-                        type=str,
-                        default="leaflet")
-    parser.add_argument("--use-enplot",
-                        help="use enplot routine (default use webplot)",
-                        action="store_true",
-                        default=False)
-    parser.add_argument("--keep-fits-files",
-                        help="keep intermediate FITS files",
-                        action="store_true",
-                        default=False)
+        epilog="Additional options will be passed to enplot/webplot program",
+    )
+    parser.add_argument(
+        "-i",
+        "--input-file",
+        help="input FITS file corresponding to CAR map",
+        type=str,
+        required=True,
+        default=None,
+    )
+    parser.add_argument(
+        "--mask-file",
+        help="set a mask file to apply to HEALPIX map before converting",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--output-dir", help="output directory holding png files", type=str, default="leaflet"
+    )
+    parser.add_argument(
+        "--use-enplot",
+        help="use enplot routine (default use webplot)",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--keep-fits-files", help="keep intermediate FITS files", action="store_true", default=False
+    )
     args, enplot_args = parser.parse_known_args()
 
-    car2tiles(args.input_file,
-              args.mask_file,
-              enplot_args,
-              output_dir=args.output_dir,
-              delete_fits=not args.keep_fits_files,
-              use_webplot=not args.use_enplot)
+    car2tiles(
+        args.input_file,
+        args.mask_file,
+        enplot_args,
+        output_dir=args.output_dir,
+        delete_fits=not args.keep_fits_files,
+        use_webplot=not args.use_enplot,
+    )
 
 
 # script:

@@ -13,7 +13,7 @@ CMB power spectra.
    :target: https://travis-ci.com/xgarrido/psplay
 
 All the specific javascript library developed for ``psplay`` is done by `Sigurd Naess
-<https://github.com/amaurea>`_. The build and javscript architecture is highly inspired by
+<https://github.com/amaurea>`_. The build process and javascript architecture is highly inspired by
 `ipyleaflet <https://github.com/jupyter-widgets/ipyleaflet>`_ project.
 
 To convert CMB map from ``FITS`` format to tile images you will also need this kind of `program

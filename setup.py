@@ -166,6 +166,12 @@ setup_args = {
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
+    "entry_points": {
+        "console_scripts": [
+            "car2tiles=psplay.tools.car2tiles:main",
+            "healpix2car=psplay.tools.healpix2car:main",
+        ],
+    },
 }
 
 setup(**setup_args)

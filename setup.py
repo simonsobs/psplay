@@ -17,7 +17,7 @@ node_root = os.path.join(here, "js")
 is_repo = os.path.exists(os.path.join(here, ".git"))
 
 npm_path = os.pathsep.join(
-    [os.path.join(node_root, "node_modules", ".bin"), os.environ.get("PATH", os.defpath),]
+    [os.path.join(node_root, "node_modules", ".bin"), os.environ.get("PATH", os.defpath)]
 )
 
 log.set_verbosity(log.DEBUG)
@@ -96,7 +96,7 @@ class NPM(Command):
         try:
             check_call(["npm", "--version"])
             return True
-        except:
+        except:  # noqa
             return False
 
     def run(self):

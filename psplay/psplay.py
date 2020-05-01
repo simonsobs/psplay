@@ -58,6 +58,7 @@ class App:
     def show_map(self):
         if self.use_sidecar:
             from sidecar import Sidecar
+            from IPython.display import display
 
             sc = Sidecar(title="CMB map")
             with sc:
@@ -261,8 +262,8 @@ class App:
             children=[
                 widgets.HBox(
                     [
-                        widgets.VBox([self.compute_1d, self.compute_2d,]),
-                        widgets.VBox([self.compute_T_only, self.lmax,]),
+                        widgets.VBox([self.compute_1d, self.compute_2d]),
+                        widgets.VBox([self.compute_T_only, self.lmax]),
                     ]
                 ),
                 out,
@@ -315,7 +316,7 @@ class App:
         self.bin_size = widgets.IntSlider(
             value=plot_config.get("bin size", 40), min=0, max=200, step=10, description="Bin size",
         )
-        config = widgets.HBox([widgets.VBox([self.use_toeplitz]), widgets.VBox([self.bin_size]),])
+        config = widgets.HBox([widgets.VBox([self.use_toeplitz]), widgets.VBox([self.bin_size])])
         accordion = widgets.Accordion(children=[config], selected_index=None)
         accordion.set_title(0, "Parameters")
 
@@ -521,7 +522,7 @@ class App:
         )
         try:
             self.fig_1d.update_layout(layout)
-        except:
+        except ValueError:
             # Do not know what's going on : an exception is raised by the graphical
             # representation works well so skip it for the time being
             print("Exception raised from 'update_layout'")

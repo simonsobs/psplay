@@ -242,7 +242,7 @@ class App:
         # Main
         self.tab = widgets.Tab()
         self.tab.children = [self._add_1d_plot(), self._add_2d_plot()]
-        self.tab.set_title(0, "1D Power spectra")
+        self.tab.set_title(0, "1D power spectra")
         self.tab.set_title(1, "2D power spectra")
 
         # General configuration

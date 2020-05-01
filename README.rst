@@ -37,12 +37,13 @@ install JupyterLab to fully enjoy ``psplay``
 
 
 To enable the extension within Jupyter, you will need to install several JupyterLab extensions
-especially the Python ``plotly`` `library <https://plotly.com/python>`_. For JupyterLab > 2.0.0, you
-can do
+especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the Jupyter `widgets
+<https://github.com/jupyter-widgets/ipywidgets>`_. For JupyterLab > 2.0.0, you can do
 
 .. code:: shell
 
    $ jupyter labextension install plotlywidget@4.6.0 jupyterlab-plotly@4.6.0
+   $ jupyter labextension install @jupyter-widgets/jupyterlab-manager @jupyter-widgets/jupyterlab-sidecar
 
 
 Finally, you need to install the `jupyter-leaflet-car
@@ -50,7 +51,7 @@ Finally, you need to install the `jupyter-leaflet-car
 
 .. code:: shell
 
-   $ jupyter labextension install @jupyter-widgets/jupyterlab-manager jupyter-leaflet jupyter-leaflet-car
+   $ jupyter labextension install jupyter-leaflet jupyter-leaflet-car
 
 
 Installation from sources

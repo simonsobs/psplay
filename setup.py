@@ -142,6 +142,7 @@ setup_args = {
         "pspy>=1.3.1",
         "plotly>=4.6.0",
         "pyyaml",
+        "sidecar",
     ],
     "packages": find_packages(),
     "zip_safe": False,

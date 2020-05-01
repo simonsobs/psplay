@@ -510,7 +510,7 @@ def compute_ps(
       lmax_pad should always be greater than lmax
     """
 
-    if binning_file is None:
+    if binning_file is None and ps_method != "2dflat":
         pspy_utils.create_binning_file(bin_size=bin_size, n_bins=1000, file_name="binning.dat")
         binning_file = "binning.dat"
 

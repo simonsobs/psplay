@@ -44,7 +44,6 @@ class App:
             with open(config, "r") as stream:
                 self.config = yaml.load(stream, Loader=yaml.FullLoader)
 
-        self.use_sidecar = self.config.get("use_sidecar", True)
         self.m = None
         self.p = None
         self.patches = dict()
@@ -56,7 +55,8 @@ class App:
         self._add_theory()
 
     def show_map(self):
-        if self.use_sidecar:
+        leaflet_config = self.config.get("leaflet", {})
+        if leaflet_config.get("use_sidecar", True):
             from sidecar import Sidecar
             from IPython.display import display
 
@@ -71,6 +71,7 @@ class App:
 
     def _add_layers(self):
         def _get_section(section, name):
+            # Python 3.8 if not value := section.get(name):
             value = section.get(name)
             if not value:
                 raise ValueError("Missing '{}' section".format(name))
@@ -78,7 +79,8 @@ class App:
 
         self.maps_info_list = list()
         self.map_ids = list()
-        maps = _get_section(self.config, "maps")
+        leaflet = _get_section(self.config, "leaflet")
+        maps = _get_section(leaflet, "maps")
         for imap in maps:
             # Data info
             map_id = _get_section(imap, "id")
@@ -147,6 +149,7 @@ class App:
                             colormap=tiles.get("colormap", "planck"),
                             value_min=vrange[i][0],
                             value_max=vrange[i][1],
+                            tag=tiles.get("tag", "layer"),
                         )
                     )
         # if maps.get("sort", True):
@@ -155,7 +158,7 @@ class App:
     def _add_map(self):
         self.m = Map(
             layers=self.layers,
-            controls=(FullScreenControl(), StatusBarControl(), LayersControl(position="topright"),),
+            controls=(FullScreenControl(), StatusBarControl()),
             crs="CAR",
             center=(0, 0),
             min_zoom=-5,
@@ -197,35 +200,42 @@ class App:
         self.draw_control.on_draw(handle_draw)
         self.m.add_control(self.draw_control)
 
-        scale = widgets.FloatSlider(
-            value=1.0,
-            min=0,
-            max=2.0,
-            step=0.01,
-            description="scale",
-            continuous_update=True,
-            orientation="vertical",
-            readout_format=".2f",
-            layout=widgets.Layout(width="100px"),
-        )
+        leaflet_config = self.config.get("leaflet", {})
 
-        def on_scale_change(change):
-            for layer in self.layers:
-                layer.scale = change["new"]
+        if leaflet_config.get("use_layer_control", False):
+            self.m.add_control(LayersControl(position="topright"))
 
-        scale.observe(on_scale_change, names="value")
-        self.m.add_control(WidgetControl(widget=scale, position="bottomright"))
+        if leaflet_config.get("use_scale_control", False):
+            scale = widgets.FloatSlider(
+                value=1.0,
+                min=0,
+                max=2.0,
+                step=0.01,
+                description="scale",
+                continuous_update=True,
+                orientation="vertical",
+                readout_format=".2f",
+                layout=widgets.Layout(width="100px"),
+            )
 
-        cmap = widgets.RadioButtons(
-            options=allowed_colormaps, value="planck", layout=widgets.Layout(width="100px"),
-        )
+            def on_scale_change(change):
+                for layer in self.layers:
+                    layer.scale = change["new"]
 
-        def on_cmap_change(change):
-            for layer in self.layers:
-                layer.colormap = change["new"]
+            scale.observe(on_scale_change, names="value")
+            self.m.add_control(WidgetControl(widget=scale, position="bottomright"))
 
-        cmap.observe(on_cmap_change, names="value")
-        self.m.add_control(WidgetControl(widget=cmap, position="bottomright"))
+        if leaflet_config.get("use_cmap_control", False):
+            cmap = widgets.RadioButtons(
+                options=allowed_colormaps, value="planck", layout=widgets.Layout(width="100px"),
+            )
+
+            def on_cmap_change(change):
+                for layer in self.layers:
+                    layer.colormap = change["new"]
+
+            cmap.observe(on_cmap_change, names="value")
+            self.m.add_control(WidgetControl(widget=cmap, position="bottomright"))
 
     def _add_theory(self):
         plot_config = self.config.get("plot", dict())

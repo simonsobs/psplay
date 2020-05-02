@@ -139,12 +139,136 @@ L.Control.Layers.include({
     // }
 });
 
+var icolormaps = [];
+for (var cmap in L.ColorizableUtils.colormaps) {
+    icolormaps.push(cmap);
+}
+
+var cache = {};
 L.Map.include({
+    _updateColors: function (e, layer) {
+        if (layer.options && "colormap" in layer.options) {
+            if (e.key == "g") {
+                console.log("Colormap");
+                var colormap = layer.options.colormap;
+                for (var i = 0; i < icolormaps.length; i++) {
+                    if (colormap === icolormaps[i]) {
+                        layer.options.colormap = icolormaps[(i+1) % icolormaps.length];
+                        break;
+                    }
+                }
+            } else if (e.key == "u") {
+                console.log("increase color");
+                var scale = layer.options.scale;
+                layer.options.scale *= 1.1;
+            } else if (e.key == "i") {
+                console.log("decrease color");
+                var scale = layer.options.scale;
+                layer.options.scale /= 1.1;
+            }
+        }
+    },
     baseFireDOMEvent: L.Map.prototype._fireDOMEvent,
     _fireDOMEvent: function (e, type, targets) {
         if (e.type === 'keypress') {
+
             console.log("Overload fireDOM: key press");
+            console.log("e.key=", e.key);
+            console.log("type=", type)
+
+            if (e.key == "z") {
+                console.log("Clean cache");
+                cache.data = {};
+                return;
+            }
+
+            // Find the layer the event is propagating from and its parents.
+	    targets = (targets || []).concat(this._findEventTargets(e, type));
+
+	    if (!targets.length) { return; }
+            window.target = targets;
+            var layers = targets[0]._layers;
+            console.log("Layers length =", layers.length);
+
+
+            if (["g", "u", "i"].includes(e.key)) {
+                if (this.layer_groups) {
+                    console.log("Update color");
+                    for (var key in this.layer_groups) {
+                        for (var i = 0; i < this.layer_groups[key].length; i++) {
+                            this._updateColors(e, this.layer_groups[key][i]);
+                        }
+                    }
+                }
+                // Update current layer
+                for (var key in layers) {
+                    var layer = layers[key];
+                    if (layer.options && "tag" in layer.options) {
+                        layer._updateTiles();
+                    }
+                }
+            }
+            if (["j", "k"].includes(e.key)) {
+                console.log("Change layer");
+                // Update current layer
+                for (var key in layers) {
+                    var layer = layers[key];
+                    if (layer.options && "tag" in layer.options && "tagId" in layer.options) {
+                        var tag = layer.options.tag;
+                        var tagId = layer.options.tagId;
+                        if (e.key == "j")
+                            tagId = (tagId + 1) % this.layer_groups[tag].length;
+                        if (e.key == "k")
+                            tagId = (tagId - 1) % this.layer_groups[tag].length;
+
+                        if (tagId == -1) tagId += this.layer_groups[tag].length;
+                        this.addLayer(this.layer_groups[tag][tagId]);
+                    }
+                }
+            }
         }
         this.baseFireDOMEvent(e, type, targets);
-    }
+    },
+    removeAllLayers: function() {
+        var map = this;
+        this.eachLayer(function(layer) {
+            if (layer.options && "tag" in layer.options) {
+                map.removeLayer(layer);
+            }
+        });
+    },
+    baseAddLayer: L.Map.prototype.addLayer,
+    addLayer: function (layer) {
+        console.log("Add layer");
+
+        if (!("layer_groups" in this))
+	    this.layer_groups = {};
+
+        // // console.log("Layer options", layer.options);
+        if (layer.options && "tag" in layer.options) {
+            var tag = layer.options.tag;
+            // console.log("Layer tag", tag);
+
+            if (!(tag in this.layer_groups)) {
+                this.layer_groups[tag] = [];
+            }
+
+            var tagId = this.layer_groups[tag].length;
+            if (!("tagId" in layer.options)) {
+                layer.options.tagId = tagId;
+                this.layer_groups[tag].push(layer);
+                layer.setCache(cache);
+                if (tagId == 0)
+                    this.baseAddLayer(layer);
+            } else {
+                // First remove all layers from map
+                this.removeAllLayers();
+                this.baseAddLayer(layer);
+            }
+        } else {
+            // Anything else (graticule for instance)
+            this.baseAddLayer(layer);
+        }
+    },
+
 });

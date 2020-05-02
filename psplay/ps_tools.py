@@ -1,3 +1,4 @@
+import time
 from copy import deepcopy
 
 import numpy as np
@@ -6,6 +7,21 @@ from scipy.ndimage.morphology import distance_transform_edt
 from pixell import enmap
 from pspy import (flat_tools, pspy_utils, so_cov, so_map, so_mcm, so_spectra,
                   so_window, sph_tools)
+
+
+class Timer:
+    def __init__(self):
+        self.t0 = None
+
+    def start(self, prefix="Starting..."):
+        self.t0 = time.time()
+        print(prefix, end=" ")
+
+    def stop(self, prefix="done"):
+        print("{} in {:.2f} s".format(prefix, time.time() - self.t0))
+
+
+timer = Timer()
 
 
 def create_window(
@@ -44,6 +60,7 @@ def create_window(
     use_rmax: boolean
       apply apodization up to the apodization radius
     """
+    timer.start("Create window...")
 
     if patch["patch_type"] == "Rectangle":
         car_box = patch["patch_coordinate"]
@@ -108,6 +125,7 @@ def create_window(
         window.data *= ps_mask.data
         del ps_mask
 
+    timer.stop()
     return car_box, window
 
 
@@ -154,6 +172,8 @@ def compute_mode_coupling(
     if ps_method == "2dflat":
         return None
 
+    timer.start("Compute MCM...")
+
     bin_lo, bin_hi, bin_c, bin_size = pspy_utils.read_binning_file(binning_file, lmax)
     n_bins = len(bin_hi)
 
@@ -167,7 +187,6 @@ def compute_mode_coupling(
         else:
             beam = (beam_data[:, 1], beam_data[:, 1])
 
-    print("compute {} MCM".format(ps_method))
     if compute_T_only:
         if ps_method == "master":
             mbb_inv, Bbl = so_mcm.mcm_and_bbl_spin0(
@@ -211,6 +230,7 @@ def compute_mode_coupling(
             mbb_inv["spin2xspin2"] = np.identity(4 * n_bins)
             mbb_inv["spin2xspin2"] *= 1 / fsky
 
+    timer.stop()
     return mbb_inv
 
 
@@ -272,14 +292,16 @@ def get_spectra(
             split.data *= map_info["cal"]
 
         if ps_method in ["master", "pseudo"]:
-            print("SPHT of %s in the patch" % map_info["name"])
+            timer.start("SPHT of {} in the patch...".format(map_info["name"]))
             alms = sph_tools.get_alms(split, window, niter=0, lmax=lmax + 50)
             ht_list += [alms]
+            timer.stop()
 
         elif ps_method == "2dflat":
-            print("FFT of %s in the patch" % map_info["name"])
+            timer.start("FFT of {} in the patch...".format(map_info["name"]))
             ffts = flat_tools.get_ffts(split, window, lmax)
             ht_list += [ffts]
+            timer.stop()
 
         name_list += [map_info["id"]]
 
@@ -369,6 +391,7 @@ def get_covariance(
      True to compute only T spectra
 
     """
+    timer.start("Compute {} error...".format(error_method))
 
     bin_lo, bin_hi, bin_c, bin_size = pspy_utils.read_binning_file(binning_file, lmax)
 
@@ -377,7 +400,6 @@ def get_covariance(
 
     cov_dict = {}
 
-    print("compute {} error".format(error_method))
     if error_method == "knox":
         for name in spec_name_list:
             m1, m2 = name.split("x")
@@ -417,6 +439,7 @@ def get_covariance(
     else:
         cov_dict = None
 
+    timer.stop()
     return cov_dict
 
 

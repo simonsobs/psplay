@@ -1,10 +1,11 @@
-maps:
-  - id: split0
-    fits: split0_IQU_car.fits
-    tiles:
-      path: tiles
+leaflet:
+  maps:
+    - id: split0
+      fits: split0_IQU_car.fits
+      tiles:
+        path: tiles
         
-  - id: split1
-    fits: split1_IQU_car.fits
-    tiles:
-      path: tiles
+    - id: split1
+      fits: split1_IQU_car.fits
+      tiles:
+        path: tiles

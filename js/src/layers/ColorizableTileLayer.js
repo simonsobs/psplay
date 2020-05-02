@@ -121,6 +121,7 @@ L.TileLayer.Colorizable = L.TileLayer.extend({
 	scale: 1,
 	skew: 1,
 	nbit: 8,
+        tag: undefined
     },
 
     initialize: function (url, opts) {

@@ -1,4 +1,4 @@
-const L = require('./leaflet-car.js');
+const L = require('../leaflet-car.js');
 
 // Print distance in degrees
 L.GeometryUtil.readableDistance = function (distance, isMetric, isFeet, isNauticalMile, precision) {
@@ -144,11 +144,18 @@ for (var cmap in L.ColorizableUtils.colormaps) {
     icolormaps.push(cmap);
 }
 
+var keybindings = {
+    "colormap": ["p"],
+    "scale": ["u", "i"],
+    "layer": ["j", "k"],
+    "cache": ["z"]
+};
+
 var cache = {};
 L.Map.include({
     _updateColors: function (e, layer) {
         if (layer.options && "colormap" in layer.options) {
-            if (e.key == "g") {
+            if (keybindings["colormap"].includes(e.key)) {
                 console.log("Colormap");
                 var colormap = layer.options.colormap;
                 for (var i = 0; i < icolormaps.length; i++) {
@@ -157,11 +164,11 @@ L.Map.include({
                         break;
                     }
                 }
-            } else if (e.key == "u") {
+            } else if (keybindings["scale"][0] == e.key) {
                 console.log("increase color");
                 var scale = layer.options.scale;
                 layer.options.scale *= 1.1;
-            } else if (e.key == "i") {
+            } else if (keybindings["scale"][1] == e.key) {
                 console.log("decrease color");
                 var scale = layer.options.scale;
                 layer.options.scale /= 1.1;
@@ -172,11 +179,18 @@ L.Map.include({
     _fireDOMEvent: function (e, type, targets) {
         if (e.type === 'keypress') {
 
-            console.log("Overload fireDOM: key press");
-            console.log("e.key=", e.key);
-            console.log("type=", type)
+            var keys = [].concat.apply([], Object.values(keybindings));
+            if (! keys.includes(e.key)) {
+                console.log("Key not recognized");
+                this.baseFireDOMEvent(e, type, targets);
+                return;
+            }
 
-            if (e.key == "z") {
+            console.log("Overload fireDOM: key press");
+            console.log("e.key =", e.key);
+            console.log("type =", type)
+
+            if (keybindings["cache"].includes(e.key)) {
                 console.log("Clean cache");
                 cache.data = {};
                 return;
@@ -186,11 +200,10 @@ L.Map.include({
 	    targets = (targets || []).concat(this._findEventTargets(e, type));
 
 	    if (!targets.length) { return; }
-            window.target = targets;
             var layers = targets[0]._layers;
-            console.log("Layers length =", layers.length);
 
-            if (["g", "u", "i"].includes(e.key)) {
+            if (keybindings["colormap"].includes(e.key) ||
+                keybindings["scale"].includes(e.key)) {
                 if (this.layer_groups) {
                     console.log("Update color");
                     for (var key in this.layer_groups) {
@@ -207,7 +220,7 @@ L.Map.include({
                     }
                 }
             }
-            if (["j", "k"].includes(e.key)) {
+            if (keybindings["layer"].includes(e.key)) {
                 console.log("Change layer");
                 // Update current layer
                 for (var key in layers) {
@@ -215,9 +228,9 @@ L.Map.include({
                     if (layer.options && "tag" in layer.options && "tagId" in layer.options) {
                         var tag = layer.options.tag;
                         var tagId = layer.options.tagId;
-                        if (e.key == "j")
+                        if (e.key == keybindings["layer"][0])
                             tagId = (tagId + 1) % this.layer_groups[tag].length;
-                        if (e.key == "k")
+                        if (e.key == keybindings["layer"][1])
                             tagId = (tagId - 1) % this.layer_groups[tag].length;
 
                         if (tagId == -1) tagId += this.layer_groups[tag].length;
@@ -226,7 +239,9 @@ L.Map.include({
                 }
             }
         }
+        // Apply base DOMEvent
         this.baseFireDOMEvent(e, type, targets);
+
     },
     removeAllLayers: function() {
         var map = this;
@@ -267,6 +282,7 @@ L.Map.include({
             // Anything else (graticule for instance)
             this.baseAddLayer(layer);
         }
+        this.fire("recolor");
     },
 
 });

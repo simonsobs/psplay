@@ -2,6 +2,7 @@
 # Distributed under the terms of the Modified BSD License.
 #
 import os
+from copy import deepcopy
 from itertools import product
 
 import ipywidgets as widgets
@@ -55,8 +56,8 @@ class App:
         self._add_theory()
 
     def show_map(self):
-        leaflet_config = self.config.get("leaflet", {})
-        if leaflet_config.get("use_sidecar", True):
+        map_config = self.config.get("map", {})
+        if map_config.get("use_sidecar", True):
             from sidecar import Sidecar
             from IPython.display import display
 
@@ -78,20 +79,19 @@ class App:
             return value
 
         self.maps_info_list = list()
-        self.map_ids = list()
-        leaflet = _get_section(self.config, "leaflet")
-        maps = _get_section(leaflet, "maps")
-        for imap in maps:
+        self.layer_ids = list()
+        map_config = _get_section(self.config, "map")
+        layers = _get_section(map_config, "layers")
+        for layer in layers:
             # Data info
-            map_id = _get_section(imap, "id")
-            self.map_ids.append(map_id)
-            fits = _get_section(imap, "fits")
-            data_type = imap.get("data_type", "IQU")
-            info = {"name": fits, "data_type": data_type, "id": map_id, "cal": None}
-            self.maps_info_list.append(info)
+            layer_id = _get_section(layer, "id")
+            self.layer_ids.append(layer_id)
+            fits = _get_section(layer, "fits")
+            data_type = layer.get("data_type", "IQU")
+            self.maps_info_list.append(dict(name=fits, data_type=data_type, id=layer_id, cal=None))
 
             # Tiles
-            tiles = _get_section(imap, "tiles")
+            tiles = _get_section(layer, "tiles")
             path = _get_section(tiles, "path")
 
             # Set color range
@@ -112,48 +112,36 @@ class App:
                     vrange[1][i] = _val if _val else vrange[1][i]
                     vrange[2][i] = vrange[1][i] if _val else vrange[2][i]
 
+            tile_default = dict(
+                url=path,
+                base=True,
+                min_zoom=-5,
+                max_zoom=+5,
+                min_native_zoom=-5,
+                max_native_zoom=0,
+                tile_size=675,
+                attribution=tiles.get("attribution", so_attribution),
+                name=tiles.get("name", ""),
+                show_loading=False,
+                colormap=tiles.get("colormap", "planck"),
+                value_min=vrange[0][0],
+                value_max=vrange[0][1],
+            )
+
             if any(s in path for s in [".png", "http"]):
-                self.layers.append(
-                    ColorizableTileLayer(
-                        url=path,
-                        base=True,
-                        min_zoom=-5,
-                        max_zoom=+5,
-                        min_native_zoom=-5,
-                        max_native_zoom=0,
-                        tile_size=675,
-                        attribution=tiles.get("attribution", so_attribution),
-                        name=tiles.get("name", ""),
-                        show_loading=False,
-                        colormap=tiles.get("colormap", "planck"),
-                        value_min=vrange[i][0],
-                        value_max=vrange[i][1],
-                    )
-                )
+                self.layers.append(ColorizableTileLayer(**tile_default))
             else:
                 for i, item in enumerate(data_type):
-                    name = "{} - {} - {}".format(tiles.get("prefix", "CMB"), map_id, item)
+                    name = "{} - {} - {}".format(tiles.get("prefix", "CMB"), layer_id, item)
                     url = os.path.join("files", path, fits, "{z}/tile_{y}_{x}_%s.png" % i)
-                    self.layers.append(
-                        ColorizableTileLayer(
-                            url=url,
-                            base=True,
-                            min_zoom=-5,
-                            max_zoom=+5,
-                            min_native_zoom=-5,
-                            max_native_zoom=0,
-                            tile_size=675,
-                            attribution=tiles.get("attribution", so_attribution),
-                            name=name,
-                            show_loading=False,
-                            colormap=tiles.get("colormap", "planck"),
-                            value_min=vrange[i][0],
-                            value_max=vrange[i][1],
-                            tag=tiles.get("tag", "layer"),
-                        )
+                    tile_config = deepcopy(tile_default)
+                    tile_config.update(
+                        dict(url=url, name=name, value_min=vrange[i][0], value_max=vrange[i][1])
                     )
-        # if maps.get("sort", True):
-        self.layers.sort()
+                    self.layers.append(ColorizableTileLayer(**tile_config))
+
+        if map_config.get("sort", True):
+            self.layers.sort()
 
     def _add_map(self):
         self.m = Map(
@@ -200,12 +188,12 @@ class App:
         self.draw_control.on_draw(handle_draw)
         self.m.add_control(self.draw_control)
 
-        leaflet_config = self.config.get("leaflet", {})
+        map_config = self.config.get("map", {})
 
-        if leaflet_config.get("use_layer_control", False):
+        if map_config.get("use_layer_control", False):
             self.m.add_control(LayersControl(position="topright"))
 
-        if leaflet_config.get("use_scale_control", False):
+        if map_config.get("use_scale_control", False):
             scale = widgets.FloatSlider(
                 value=1.0,
                 min=0,
@@ -225,7 +213,7 @@ class App:
             scale.observe(on_scale_change, names="value")
             self.m.add_control(WidgetControl(widget=scale, position="bottomright"))
 
-        if leaflet_config.get("use_cmap_control", False):
+        if map_config.get("use_cmap_control", False):
             cmap = widgets.RadioButtons(
                 options=allowed_colormaps, value="planck", layout=widgets.Layout(width="100px"),
             )
@@ -313,8 +301,8 @@ class App:
         self.spectra_1d = widgets.Dropdown(description="Spectra:", options=allowed_spectra)
         self.split_1d = widgets.Dropdown(
             description="Split:",
-            value="{}x{}".format(*self.map_ids),
-            options=["{}x{}".format(*p) for p in product(self.map_ids, repeat=2)],
+            value="{}x{}".format(*self.layer_ids),
+            options=["{}x{}".format(*p) for p in product(self.layer_ids, repeat=2)],
         )
         header = widgets.HBox([self.spectra_1d, self.split_1d])
 
@@ -346,8 +334,8 @@ class App:
         self.spectra_2d = widgets.Dropdown(description="Spectra:", options=allowed_spectra)
         self.split_2d = widgets.Dropdown(
             description="Split:",
-            value="{}x{}".format(*self.map_ids),
-            options=["{}x{}".format(*p) for p in product(self.map_ids, repeat=2)],
+            value="{}x{}".format(*self.layer_ids),
+            options=["{}x{}".format(*p) for p in product(self.layer_ids, repeat=2)],
         )
         self.patch_2d = widgets.Dropdown(description="Patch:", options=self.patches.keys())
         header = widgets.HBox([self.spectra_2d, self.split_2d, self.patch_2d])

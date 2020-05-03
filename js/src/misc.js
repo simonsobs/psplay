@@ -190,7 +190,6 @@ L.Map.include({
             var layers = targets[0]._layers;
             console.log("Layers length =", layers.length);
 
-
             if (["g", "u", "i"].includes(e.key)) {
                 if (this.layer_groups) {
                     console.log("Update color");
@@ -244,7 +243,6 @@ L.Map.include({
         if (!("layer_groups" in this))
 	    this.layer_groups = {};
 
-        // // console.log("Layer options", layer.options);
         if (layer.options && "tag" in layer.options) {
             var tag = layer.options.tag;
             // console.log("Layer tag", tag);

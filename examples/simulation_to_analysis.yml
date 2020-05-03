@@ -4,7 +4,7 @@ leaflet:
       fits: split0_IQU_car.fits
       tiles:
         path: tiles
-        
+
     - id: split1
       fits: split1_IQU_car.fits
       tiles:

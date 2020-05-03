@@ -1,7 +1,7 @@
 # Copyright (c) Simons Observatory.
 # Distributed under the terms of the Modified BSD License.
 #
-from traitlets import CFloat, Enum, Unicode
+from traitlets import CFloat, Dict, Enum, Unicode
 
 from ipyleaflet import Control, Layer, LocalTileLayer, allowed_crs
 
@@ -53,3 +53,17 @@ class StatusBarControl(Control):
 
     prefix = Unicode("").tag(sync=True, o=True)
     position = Unicode("bottomleft").tag(sync=True, o=True)
+
+
+class KeyBindingControl(Control):
+    _view_name = Unicode("LeafletKeyBindingControlView").tag(sync=True)
+    _model_name = Unicode("LeafletKeyBindingControlModel").tag(sync=True)
+    _view_module = Unicode("jupyter-leaflet-car").tag(sync=True)
+    _model_module = Unicode("jupyter-leaflet-car").tag(sync=True)
+
+    _view_module_version = Unicode(EXTENSION_VERSION).tag(sync=True)
+    _model_module_version = Unicode(EXTENSION_VERSION).tag(sync=True)
+
+    keybindings = Dict(
+        {"colormap": ["p"], "scale": ["u", "i"], "layer": ["j", "k"], "cache": ["z"]}
+    ).tag(sync=True, o=True)

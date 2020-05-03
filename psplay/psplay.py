@@ -13,8 +13,8 @@ import plotly.graph_objects as go
 from ipyleaflet import (DrawControl, FullScreenControl, LayersControl, Map,
                         MapStyle, WidgetControl)
 
-from .ipyleaflet import (ColorizableTileLayer, Graticule, StatusBarControl,
-                         allowed_colormaps)
+from .ipyleaflet import (ColorizableTileLayer, Graticule, KeyBindingControl,
+                         StatusBarControl, allowed_colormaps)
 from .ps_tools import compute_ps
 
 # Default SO attribution for tiles
@@ -146,7 +146,7 @@ class App:
     def _add_map(self):
         self.m = Map(
             layers=self.layers,
-            controls=(FullScreenControl(), StatusBarControl()),
+            controls=(FullScreenControl(), StatusBarControl(), KeyBindingControl()),
             crs="CAR",
             center=(0, 0),
             min_zoom=-5,

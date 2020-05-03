@@ -7,12 +7,13 @@ var colorizabletilelayer = require('./layers/ColorizableTileLayer.js');
 
 //Controls
 var status = require('./controls/StatusBarControl.js');
+var keybinding = require('./controls/KeyBindingControl.js')
 
 //Geo
 var car = require('./geo/crs/CRS.CAR.js')
 
 //Misc
-var misc = require('./misc.js')
+var misc = require('./utils/Misc.js')
 
 //Exports
 module.exports = {
@@ -20,9 +21,11 @@ module.exports = {
     LeafletGraticuleView : graticule.LeafletGraticuleView,
     LeafletColorizableTileLayerView : colorizabletilelayer.LeafletColorizableTileLayerView,
     LeafletStatusBarControlView : status.LeafletStatusBarControlView,
+    LeafletKeyBindingControlView : keybinding.LeafletKeyBindingControlView,
 
     // models
     LeafletGraticuleModel : graticule.LeafletGraticuleModel,
     LeafletColorizableTileLayerModel : colorizabletilelayer.LeafletColorizableTileLayerModel,
     LeafletStatusBarControlModel : status.LeafletStatusBarControlModel,
+    LeafletKeyBindingControlModel : keybinding.LeafletKeyBindingControlModel,
 };

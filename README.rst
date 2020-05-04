@@ -32,13 +32,7 @@ To install, you will need to have or to install ``numpy``. Then, run
 
    $ pip install psplay [--user]
 
-``psplay`` runs within a Jupyter notebook. You need then to install Jupyter and we recommend to also
-install JupyterLab to fully enjoy ``psplay``
-
-.. code:: shell
-
-   $ pip install jupyterlab [--user]
-
+``psplay`` runs within a Jupyter notebook and we recommend to use JupyterLab to fully enjoy ``psplay``
 
 To enable the extension within Jupyter, you will need to install several JupyterLab extensions
 especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the Jupyter `widgets

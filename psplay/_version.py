@@ -1,5 +1,5 @@
-version_info = (0, 0, 2)
+version_info = (0, 0, 3)
 
 __version__ = "{}.{}.{}".format(*version_info)
 
-EXTENSION_VERSION = "^" + __version__
+EXTENSION_VERSION = "^0.0.3"

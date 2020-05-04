@@ -44,6 +44,9 @@ class App:
             with open(config, "r") as stream:
                 self.config = yaml.load(stream, Loader=yaml.FullLoader)
 
+        self.map_config = self.config.get("map", {})
+        self.plot_config = self.config.get("plot", {})
+
         self.m = None
         self.p = None
         self.patches = dict()
@@ -55,8 +58,7 @@ class App:
         self._add_theory()
 
     def show_map(self):
-        map_config = self.config.get("map", {})
-        if map_config.get("use_sidecar", True):
+        if self.map_config.get("use_sidecar", True):
             from sidecar import Sidecar
             from IPython.display import display
 
@@ -79,8 +81,8 @@ class App:
 
         self.maps_info_list = list()
         self.layer_ids = list()
-        map_config = _get_section(self.config, "map")
-        layers = _get_section(map_config, "layers")
+        self.map_config = _get_section(self.config, "map")
+        layers = _get_section(self.map_config, "layers")
         for layer in layers:
             # Data info
             layer_id = _get_section(layer, "id")
@@ -111,6 +113,10 @@ class App:
                     vrange[1][i] = _val if _val else vrange[1][i]
                     vrange[2][i] = vrange[1][i] if _val else vrange[2][i]
 
+            # Check if LayerControl is used, if not attribution becomes layer name
+            use_layer_control = self.map_config.get("widgets", {}).get("use_layer_control", False)
+            name = tiles.get("name", "")
+            attribution = tiles.get("attribution", so_attribution) if use_layer_control else name
             tile_default = dict(
                 url=path,
                 base=True,
@@ -119,8 +125,8 @@ class App:
                 min_native_zoom=-5,
                 max_native_zoom=0,
                 tile_size=675,
-                attribution=tiles.get("attribution", so_attribution),
-                name=tiles.get("name", ""),
+                attribution=attribution,
+                name=name,
                 show_loading=False,
                 colormap=tiles.get("colormap", "planck"),
                 value_min=vrange[0][0],
@@ -133,13 +139,20 @@ class App:
                 for i, item in enumerate(data_type):
                     name = "{} - {} - {}".format(tiles.get("prefix", "CMB"), layer_id, item)
                     url = os.path.join("files", path, fits, "{z}/tile_{y}_{x}_%s.png" % i)
+                    attribution = attribution if use_layer_control else name
                     tile_config = deepcopy(tile_default)
                     tile_config.update(
-                        dict(url=url, name=name, value_min=vrange[i][0], value_max=vrange[i][1])
+                        dict(
+                            url=url,
+                            attribution=attribution,
+                            name=name,
+                            value_min=vrange[i][0],
+                            value_max=vrange[i][1],
+                        )
                     )
                     self.layers.append(ColorizableTileLayer(**tile_config))
 
-        if map_config.get("sort", True):
+        if self.map_config.get("sort_layers", True):
             self.layers.sort()
 
     def _add_map(self):
@@ -193,12 +206,11 @@ class App:
         self.draw_control.on_draw(handle_draw)
         self.m.add_control(self.draw_control)
 
-        map_config = self.config.get("map", {})
-
-        if map_config.get("use_layer_control", False):
+        widgets_config = self.map_config.get("widgets", {})
+        if widgets_config.get("use_layer_control", False):
             self.m.add_control(LayersControl(position="topright"))
 
-        if map_config.get("use_scale_control", False):
+        if widgets_config.get("use_scale_control", False):
             scale = widgets.FloatSlider(
                 value=1.0,
                 min=0,
@@ -218,7 +230,7 @@ class App:
             scale.observe(on_scale_change, names="value")
             self.m.add_control(WidgetControl(widget=scale, position="bottomright"))
 
-        if map_config.get("use_cmap_control", False):
+        if widgets_config.get("use_cmap_control", False):
             cmap = widgets.RadioButtons(
                 options=allowed_colormaps, value="planck", layout=widgets.Layout(width="100px"),
             )
@@ -231,15 +243,14 @@ class App:
             self.m.add_control(WidgetControl(widget=cmap, position="bottomright"))
 
     def _add_theory(self):
-        plot_config = self.config.get("plot", dict())
         clth = {}
         lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
-            plot_config.get("theory", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat"),
+            self.plot_config.get("theory", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat"),
             unpack=True,
         )
         clth["ET"] = clth["TE"]
         for spec in ["EB", "BE", "BT", "TB"]:
-            clth[spec] = clth["TE"] * 0.0
+            clth[spec] = np.zeros(clth["TE"].shape)
         self.theory = {"lth": lth, "clth": clth}
 
     def _add_plot(self):
@@ -257,7 +268,11 @@ class App:
             value=False, description="Only temperature", layout=layout
         )
         self.lmax = widgets.IntSlider(
-            value=1000, min=0, max=10000, step=100, description=r"$\ell_\mathrm{max}$",
+            value=self.plot_config.get("lmax", 1000),
+            min=0,
+            max=10000,
+            step=100,
+            description=r"$\ell_\mathrm{max}$",
         )
 
         # Logs
@@ -294,8 +309,7 @@ class App:
 
     def _add_1d_plot(self):
         # Figure widget
-        plot_config = self.config.get("plot", dict())
-        plotly_config = plot_config.get("plotly", dict())
+        plotly_config = self.plot_config.get("plotly", dict())
 
         self.fig_1d = go.FigureWidget(
             layout=go.Layout(height=600, template=plotly_config.get("template", "plotly_white"))
@@ -313,7 +327,11 @@ class App:
             value=False, description="Use Toeplitz approx.", layout=layout
         )
         self.bin_size = widgets.IntSlider(
-            value=plot_config.get("bin size", 40), min=0, max=200, step=10, description="Bin size",
+            value=self.plot_config.get("bin size", 40),
+            min=0,
+            max=200,
+            step=10,
+            description="Bin size",
         )
         config = widgets.HBox([widgets.VBox([self.use_toeplitz]), widgets.VBox([self.bin_size])])
         accordion = widgets.Accordion(children=[config], selected_index=None)
@@ -323,8 +341,7 @@ class App:
 
     def _add_2d_plot(self):
         # Figure widget
-        plot_config = self.config.get("plot", dict())
-        plotly_config = plot_config.get("plotly", dict())
+        plotly_config = self.plot_config.get("plotly", {})
 
         self.fig_2d = go.FigureWidget(
             layout=go.Layout(height=600, template=plotly_config.get("template", "plotly_white"))

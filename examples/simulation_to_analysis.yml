@@ -1,5 +1,5 @@
-leaflet:
-  maps:
+map:
+  layers:
     - id: split0
       fits: split0_IQU_car.fits
       tiles:

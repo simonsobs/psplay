@@ -1,7 +1,7 @@
 # Copyright (c) Simons Observatory.
 # Distributed under the terms of the Modified BSD License.
 #
-from traitlets import CFloat, Dict, Enum, Unicode
+from traitlets import CFloat, Dict, Enum, Unicode, default, validate
 
 from ipyleaflet import Control, Layer, LocalTileLayer, allowed_crs
 
@@ -67,3 +67,18 @@ class KeyBindingControl(Control):
     keybindings = Dict().tag(sync=True, o=True)
     help_text = Unicode("").tag(sync=True, o=True)
     position = Unicode("topright").tag(sync=True, o=True)
+
+    @default("keybindings")
+    def _default_keybindings(self):
+        return dict(colormap=["g"], scale=["u", "i"], layer=["j", "k"], cache=["z"])
+
+    @validate("keybindings")
+    def _validate_keybindings(self, proposal):
+        """Validate keybindings list.
+
+        Makes sure no more than 2 keys are given.
+        """
+        for k, v in proposal.value.items():
+            if len(v) > 2:
+                raise ValueError("More than 2 keys for a keybinding is not allowed!")
+        return proposal.value

@@ -1,6 +1,6 @@
-======
-psplay
-======
+.. raw:: html
+
+      <img src="https://user-images.githubusercontent.com/2495611/80969621-33593680-8e1a-11ea-9692-39e63e9804d8.png" height="400px">
 
 .. image:: https://img.shields.io/pypi/v/psplay.svg?style=flat
    :target: https://pypi.python.org/pypi/psplay/

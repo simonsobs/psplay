@@ -3,7 +3,6 @@
 #
 import os
 from copy import deepcopy
-from itertools import product
 
 import ipywidgets as widgets
 import numpy as np
@@ -305,11 +304,7 @@ class App:
         # Header
         allowed_spectra = ["TT", "TE", "TB", "ET", "BT", "EE", "EB", "BE", "BB"]
         self.spectra_1d = widgets.Dropdown(description="Spectra:", options=allowed_spectra)
-        self.split_1d = widgets.Dropdown(
-            description="Split:",
-            value="{}x{}".format(*self.layer_ids),
-            options=["{}x{}".format(*p) for p in product(self.layer_ids, repeat=2)],
-        )
+        self.split_1d = widgets.Dropdown(description="Split:")
         header = widgets.HBox([self.spectra_1d, self.split_1d])
 
         # Config
@@ -338,11 +333,7 @@ class App:
         # Header
         allowed_spectra = ["II", "IQ", "IU", "QI", "QQ", "QU", "UI", "UQ", "UU"]
         self.spectra_2d = widgets.Dropdown(description="Spectra:", options=allowed_spectra)
-        self.split_2d = widgets.Dropdown(
-            description="Split:",
-            value="{}x{}".format(*self.layer_ids),
-            options=["{}x{}".format(*p) for p in product(self.layer_ids, repeat=2)],
-        )
+        self.split_2d = widgets.Dropdown(description="Split:")
         self.patch_2d = widgets.Dropdown(description="Patch:", options=self.patches.keys())
         header = widgets.HBox([self.spectra_2d, self.split_2d, self.patch_2d])
 

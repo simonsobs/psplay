@@ -110,14 +110,13 @@ L.Map.include({
     },
     baseAddLayer: L.Map.prototype.addLayer,
     addLayer: function (layer) {
-        console.log("Add layer");
 
         if (!("layer_groups" in this))
 	    this.layer_groups = {};
 
         if (layer.options && "tag" in layer.options) {
             var tag = layer.options.tag;
-            console.log("Layer tag", tag);
+            console.log("Add layer with tag", tag);
 
             if (!(tag in this.layer_groups)) {
                 this.layer_groups[tag] = [];
@@ -128,6 +127,7 @@ L.Map.include({
                 layer.options.tagId = tagId;
                 this.layer_groups[tag].push(layer);
                 layer.setCache(cache);
+                // Only load the first one
                 if (tagId == 0)
                     this.baseAddLayer(layer);
             } else {
@@ -143,6 +143,85 @@ L.Map.include({
     },
 
 });
+
+L.Control.KeyBinding = L.Control.extend({
+    options: {
+	position: "topright",
+        iconText: "?",
+        hoverText: "Help",
+        helpText: undefined,
+    },
+
+    onAdd: function (map) {
+	var container = L.DomUtil.create("div", "leaflet-control-zoom leaflet-bar"),
+	    options = this.options;
+
+	this._helpButton = this._createButton(options.iconText, options.hoverText,
+		                              "leaflet-control-zoom-in", container, this._toggleHelp);
+
+        this._help = L.DomUtil.create("div", "leaflet-help", container);
+	L.DomEvent.on(this._help, "click", this._onClose, this);
+
+        var content = L.DomUtil.create("div", "leaflet-help-content", this._help);
+        var text = "<span class=\"close\">&times;</span>";
+        if (options.helpText !== "") {
+            text += options.helpText;
+        } else {
+            text += "<p>Default keybindings are:</p>";
+	    text += "<ul>";
+            for (var key in keybindings) {
+                var keys = keybindings[key];
+                text += "<li> Use ";
+                if (keys.length == 2)
+                    text += "<b>" + keys[0] + "/" + keys[1] + "</b> keys";
+                else
+                    text += "<b>" + keys[0] + "</b> key";
+                text += " to change " + key + "</li>";
+            }
+            text += "</ul>"
+        }
+        content.innerHTML = text;
+
+	return container;
+    },
+
+    onRemove: function (map) {
+    },
+
+    _onClose: function (e) {
+        this._help.style.display = "none";
+    },
+
+    _toggleHelp: function (e) {
+        this._help.style.display = "block";
+    },
+
+    _createButton: function (icon, hover, className, container, fn) {
+	var link = L.DomUtil.create("a", className, container);
+	link.innerHTML = icon;
+	link.href = "#";
+	link.title = hover;
+
+	/*
+	 * Will force screen readers like VoiceOver to read this as "Zoom in - button"
+	 */
+	link.setAttribute("role", "button");
+	link.setAttribute("aria-label", hover);
+
+	L.DomEvent.disableClickPropagation(link);
+	L.DomEvent.on(link, "click", L.DomEvent.stop);
+	L.DomEvent.on(link, "click", fn, this);
+	L.DomEvent.on(link, "click", this._refocusOnMap, this);
+
+	return link;
+    },
+
+});
+
+L.control.keyBinding = function (options) {
+    return new L.Control.KeyBinding(options);
+};
+
 
 export class LeafletKeyBindingControlModel extends control.LeafletControlModel {
     defaults() {
@@ -163,5 +242,6 @@ export class LeafletKeyBindingControlView extends control.LeafletControlView {
     }
 
     create_obj() {
+        this.obj = L.control.keyBinding(this.get_options());
     }
 }

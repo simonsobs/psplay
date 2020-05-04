@@ -15,6 +15,9 @@ var car = require('./geo/crs/CRS.CAR.js')
 //Misc
 var misc = require('./utils/Misc.js')
 
+// Load css
+require('./controls/KeyBindingControl.css');
+
 //Exports
 module.exports = {
     // views

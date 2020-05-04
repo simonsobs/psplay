@@ -2,13 +2,6 @@
 
       <img src="https://user-images.githubusercontent.com/2495611/80969621-33593680-8e1a-11ea-9692-39e63e9804d8.png" height="400px">
 
-.. image:: https://img.shields.io/pypi/v/psplay.svg?style=flat
-   :target: https://pypi.python.org/pypi/psplay/
-.. image:: https://img.shields.io/npm/v/jupyter-leaflet-car
-   :target: https://www.npmjs.com/package/jupyter-leaflet-car
-.. image:: https://travis-ci.com/xgarrido/psplay.svg?branch=master
-   :target: https://travis-ci.com/xgarrido/psplay
-
 A tool to visualize and play with CMB maps. ``psplay`` is a ``jupyter`` extension to allow
 interactive visualization of CMB maps through `Leaflet <leafletjs.com>`_ library. ``psplay`` also
 provides a set of tools based on `pspy <https://github.com/simonsobs/pspy>`_ to compute and to show
@@ -18,6 +11,12 @@ All the specific javascript library developed for ``psplay`` is done by `Sigurd 
 <https://github.com/amaurea>`_. The build process and javascript architecture is highly inspired by
 `ipyleaflet <https://github.com/jupyter-widgets/ipyleaflet>`_ project.
 
+.. image:: https://img.shields.io/pypi/v/psplay.svg?style=flat
+   :target: https://pypi.python.org/pypi/psplay/
+.. image:: https://img.shields.io/npm/v/jupyter-leaflet-car
+   :target: https://www.npmjs.com/package/jupyter-leaflet-car
+.. image:: https://travis-ci.com/xgarrido/psplay.svg?branch=master
+   :target: https://travis-ci.com/xgarrido/psplay
 
 Installation
 ------------

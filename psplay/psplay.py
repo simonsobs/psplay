@@ -144,9 +144,15 @@ class App:
             self.layers.sort()
 
     def _add_map(self):
+        default_keybindings = dict(colormap=["g"], scale=["u", "i"], layer=["j", "k"], cache=["z"])
+        default_keybindings.update(self.config.get("map").get("keybindings", {}))
         self.m = Map(
             layers=self.layers,
-            controls=(FullScreenControl(), StatusBarControl(), KeyBindingControl()),
+            controls=(
+                FullScreenControl(),
+                StatusBarControl(),
+                KeyBindingControl(keybindings=default_keybindings),
+            ),
             crs="CAR",
             center=(0, 0),
             min_zoom=-5,

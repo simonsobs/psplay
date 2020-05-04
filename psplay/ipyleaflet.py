@@ -64,8 +64,6 @@ class KeyBindingControl(Control):
     _view_module_version = Unicode(EXTENSION_VERSION).tag(sync=True)
     _model_module_version = Unicode(EXTENSION_VERSION).tag(sync=True)
 
-    keybindings = Dict(
-        {"colormap": ["g"], "scale": ["u", "i"], "layer": ["j", "k"], "cache": ["z"]}
-    ).tag(sync=True, o=True)
+    keybindings = Dict().tag(sync=True, o=True)
     help_text = Unicode("").tag(sync=True, o=True)
     position = Unicode("topright").tag(sync=True, o=True)

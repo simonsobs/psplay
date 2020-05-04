@@ -18,6 +18,11 @@ All the specific javascript library developed for ``psplay`` is done by `Sigurd 
 .. image:: https://travis-ci.com/xgarrido/psplay.svg?branch=master
    :target: https://travis-ci.com/xgarrido/psplay
 
+Examples
+--------
+
+* `From healpix map file to psplay <https://github.com/xgarrido/psplay/blob/master/examples/simulation_to_analysis.ipynb>`_
+
 Installation
 ------------
 
@@ -101,8 +106,3 @@ If you are on JupyterLab you also need to run the following in a separate termin
 
 Every time a JavaScript build has terminated you need to refresh the Notebook page in order to load
 the JavaScript code again.
-
-Examples
---------
-
-* `From healpix map file to psplay <https://github.com/xgarrido/psplay/blob/master/examples/simulation_to_analysis.ipynb>`_

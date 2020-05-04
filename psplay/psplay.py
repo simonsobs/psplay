@@ -208,7 +208,7 @@ class App:
 
         widgets_config = self.map_config.get("widgets", {})
         if widgets_config.get("use_layer_control", False):
-            self.m.add_control(LayersControl(position="topright"))
+            self.m.add_control(LayersControl(position="bottomleft"))
 
         if widgets_config.get("use_scale_control", False):
             scale = widgets.FloatSlider(

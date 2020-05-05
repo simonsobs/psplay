@@ -47,36 +47,42 @@ L.SVG.include({
     baseInitPath: L.SVG.prototype._initPath,
     _initPath: function (layer) {
         if (layer.options) {
-            // console.log("Color", patchColors[ipatch % patchColors.length]);
             layer.options.color = patchColors[ipatch % patchColors.length];
         }
         this.baseInitPath(layer);
     },
 });
 
-// Increase patch number
+// Increase patch number and store patch id with color
 L.Draw.Feature.include({
     baseFire: L.Draw.Feature.prototype._fireCreatedEvent,
     _fireCreatedEvent: function (layer) {
         // console.log("Fire created event");
+        if (layer.options) {
+            layer.options.color = patchColors[ipatch % patchColors.length];
+            layer.options.id = "patch #" + ipatch;
+        }
         this.baseFire(layer);
         ipatch++;
     },
-    // baseInitialize: L.Draw.Feature.prototype.initialize,
-    // initialize: function (map, options) {
-    //     console.log("Initialise", options);
-    //     this.baseInitialize(map, options);
-    // },
-    // baseEnable: L.Draw.Feature.prototype.enable,
-    // enable: function () {
-    //     console.log("Enable");
-    //     this.baseEnable();
-    // },
-    // baseAddHooks: L.Draw.Feature.prototype.addHooks,
-    // addHooks: function () {
-    //     console.log("Add hooks");
-    //     this.baseAddHooks();
-    // }
+});
+
+// Update circle radius
+L.EditToolbar.Edit.include({
+    baseSave: L.EditToolbar.Edit.prototype.save,
+    save: function () {
+	var editedLayers = new L.LayerGroup();
+	this._featureGroup.eachLayer(function (layer) {
+	    if (layer.edited) {
+                if (layer instanceof L.Circle) {
+                    layer.options.radius = layer.getRadius();
+                }
+		editedLayers.addLayer(layer);
+		layer.edited = false;
+	    }
+	});
+	this._map.fire(L.Draw.Event.EDITED, {layers: editedLayers});
+    },
 });
 
 

@@ -11,7 +11,6 @@ import yaml
 import plotly.graph_objects as go
 from ipyleaflet import (DrawControl, FullScreenControl, LayersControl, Map,
                         MapStyle, WidgetControl)
-from plotly.colors import qualitative
 
 from .ipyleaflet import (ColorizableTileLayer, Graticule, KeyBindingControl,
                          StatusBarControl, allowed_colormaps)
@@ -30,9 +29,6 @@ def generate_default_colorscale(default="planck"):
 
 
 default_colorscale = generate_default_colorscale()
-
-# Also get default Plotly discrete colors
-plotly_colors = qualitative.Plotly
 
 # Output widget to catch functions/programs output into a widget
 out = widgets.Output()
@@ -191,21 +187,20 @@ class App:
         self.draw_control.circlemarker = {}
         self.draw_control.circle = {"repeatMode": True}
         self.draw_control.rectangle = {"repeatMode": True}
-        self.draw_control.edit = False
+        self.draw_control.edit = True
         self.draw_control.remove = True
 
         patches = self.patches
 
         def handle_draw(self, action, geo_json):
-            if action == "created":
-                name = "patch #{}".format(len(patches.keys()))
-                patches[name] = geo_json
-            elif action == "deleted":
-                for k in list(patches.keys()):
-                    if patches[k]["geometry"] == geo_json["geometry"]:
-                        del patches[k]
-            else:
-                print("Action = ", action)
+            patch_id = geo_json.get("properties", {}).get("style", {}).get("id", None)
+            if not patch_id:
+                raise ValueError("Missing patch id from GeoJSON!")
+            if action in ["created", "edited"]:
+                patches[patch_id] = geo_json
+                patches[patch_id].update({"results": None})
+            if action == "deleted":
+                del patches[patch_id]
 
         self.draw_control.on_draw(handle_draw)
         self.m.add_control(self.draw_control)
@@ -300,8 +295,7 @@ class App:
         self.clean_button = widgets.Button(description="Clean patches", icon="trash-alt")
 
         def _clean_patches(_):
-            for k in list(self.patches.keys()):
-                del self.patches[k]
+            self.patches.clear()
             self.draw_control.clear()
             self.clean_button.description = "Clean patches ({})".format(len(self.patches))
 
@@ -410,7 +404,7 @@ class App:
                     )
 
                 method = patch.get(ps_method, dict())
-                if method.get("config") == kwargs:
+                if method.get("results") and method.get("config") == kwargs:
                     print("Patch already processed under the same condition")
                     spectra, spec_name_list, lb, ps_dict, cov_dict = method.get("results").values()
                     continue
@@ -475,7 +469,7 @@ class App:
             if not results:
                 continue
             # Get the correct color given patch id
-            color = plotly_colors[int(name.split("#")[-1]) % len(plotly_colors)]
+            color = patch.get("properties").get("style").get("color")
             x = results.get("lb")
             y = results.get("ps").get(split_name).get(spec)
             yerr = np.sqrt(np.diag(results.get("cov").get(split_name).get(spec)))
@@ -618,7 +612,9 @@ class App:
             # width=self.fig_2d.layout.height,
             title=dict(
                 text="{} - {}".format(split_name, patch_name),
-                font=dict(color=plotly_colors[int(patch_name.split("#")[-1]) % len(plotly_colors)]),
+                font=dict(
+                    color=self.patches[patch_name].get("properties").get("style").get("color")
+                ),
             ),
             xaxis=dict(
                 title=r"$\ell_X$",

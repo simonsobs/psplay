@@ -11,6 +11,7 @@ import yaml
 import plotly.graph_objects as go
 from ipyleaflet import (DrawControl, FullScreenControl, LayersControl, Map,
                         MapStyle, WidgetControl)
+from plotly.colors import qualitative
 
 from .ipyleaflet import (ColorizableTileLayer, Graticule, KeyBindingControl,
                          StatusBarControl, allowed_colormaps)
@@ -29,6 +30,9 @@ def generate_default_colorscale(default="planck"):
 
 
 default_colorscale = generate_default_colorscale()
+
+# Also get default Plotly discrete colors
+plotly_colors = qualitative.Plotly
 
 # Output widget to catch functions/programs output into a widget
 out = widgets.Output()
@@ -188,7 +192,7 @@ class App:
         self.draw_control.circle = {"repeatMode": True}
         self.draw_control.rectangle = {"repeatMode": True}
         self.draw_control.edit = False
-        self.draw_control.remove = False
+        self.draw_control.remove = True
 
         patches = self.patches
 
@@ -197,9 +201,9 @@ class App:
                 name = "patch #{}".format(len(patches.keys()))
                 patches[name] = geo_json
             elif action == "deleted":
-                for k, v in patches.items():
-                    if v == geo_json:
-                        patches[k] = None
+                for k in list(patches.keys()):
+                    if patches[k]["geometry"] == geo_json["geometry"]:
+                        del patches[k]
             else:
                 print("Action = ", action)
 
@@ -322,10 +326,7 @@ class App:
         header = widgets.HBox([self.spectra_1d, self.split_1d])
 
         # Config
-        layout = widgets.Layout(width="auto", height="auto")
-        self.use_toeplitz = widgets.Checkbox(
-            value=False, description="Use Toeplitz approx.", layout=layout
-        )
+        self.use_toeplitz = widgets.Checkbox(value=False, description="Use Toeplitz approx.")
         self.bin_size = widgets.IntSlider(
             value=self.plot_config.get("bin size", 40),
             min=0,
@@ -392,7 +393,7 @@ class App:
                             "radius": style.get("radius"),
                         }
                 else:
-                    print("Shape '{} not supported".format(geometry))
+                    print("Shape '{}' not supported".format(geometry))
                     continue
 
                 kwargs = dict(ps_method=ps_method, lmax=self.lmax.value,)
@@ -411,6 +412,7 @@ class App:
                 method = patch.get(ps_method, dict())
                 if method.get("config") == kwargs:
                     print("Patch already processed under the same condition")
+                    spectra, spec_name_list, lb, ps_dict, cov_dict = method.get("results").values()
                     continue
 
                 spectra, spec_name_list, lb, ps_dict, cov_dict = compute_ps(
@@ -430,12 +432,13 @@ class App:
                 )
                 patch.update({ps_method: method})
 
-            if ps_method == "master":
-                self.spectra_1d.options = spectra
-                self.split_1d.options = spec_name_list
-            if ps_method == "2dflat":
-                self.spectra_2d.options = spectra
-                self.split_2d.options = spec_name_list
+            if spectra is not None:
+                if ps_method == "master":
+                    self.spectra_1d.options = spectra
+                    self.split_1d.options = spec_name_list
+                if ps_method == "2dflat":
+                    self.spectra_2d.options = spectra
+                    self.split_2d.options = spec_name_list
 
         if spectra is not None:
             self.spectra_1d.observe(self._update_plot, names="value")
@@ -471,6 +474,8 @@ class App:
             results = method.get("results")
             if not results:
                 continue
+            # Get the correct color given patch id
+            color = plotly_colors[int(name.split("#")[-1]) % len(plotly_colors)]
             x = results.get("lb")
             y = results.get("ps").get(split_name).get(spec)
             yerr = np.sqrt(np.diag(results.get("cov").get(split_name).get(spec)))
@@ -478,8 +483,9 @@ class App:
                 name=name,
                 x=x,
                 y=y,
-                error_y=dict(type="data", array=yerr, visible=True),
+                error_y=dict(type="data", array=yerr, visible=True, color=color),
                 mode="markers",
+                marker=dict(color=color),
             )
         self.fig_1d.add_scatter(
             name="theory",
@@ -556,8 +562,6 @@ class App:
         x = np.linspace(np.min(p2d.lx), np.max(p2d.lx), shape[1])
         y = np.linspace(np.min(p2d.ly), np.max(p2d.ly), shape[0])
 
-        from plotly.colors import qualitative
-
         # Clean data
         self.fig_2d.data = []
         self.fig_2d.add_heatmap(x=x, y=y, z=powermap, colorscale=default_colorscale)
@@ -614,7 +618,7 @@ class App:
             # width=self.fig_2d.layout.height,
             title=dict(
                 text="{} - {}".format(split_name, patch_name),
-                font=dict(color=qualitative.Plotly[list(self.patches).index(patch_name)]),
+                font=dict(color=plotly_colors[int(patch_name.split("#")[-1]) % len(plotly_colors)]),
             ),
             xaxis=dict(
                 title=r"$\ell_X$",

@@ -27,7 +27,7 @@ timer = Timer()
 def create_window(
     patch,
     maps_info_list,
-    apo_radius_survey,
+    apo_radius_survey=1,
     res_arcmin=0.5,
     galactic_mask=None,
     source_mask=None,

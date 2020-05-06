@@ -2,6 +2,8 @@
 # Distributed under the terms of the Modified BSD License.
 #
 import os
+import pickle
+import time
 from copy import deepcopy
 
 import ipywidgets as widgets
@@ -293,16 +295,32 @@ class App:
         # Footer
         self.compute_button = widgets.Button(description="Compute spectra", icon="check")
         self.clean_button = widgets.Button(description="Clean patches", icon="trash-alt")
+        self.export_button = widgets.Button(description="Export results", icon="download")
 
         def _clean_patches(_):
             self.patches.clear()
             self.draw_control.clear()
             self.clean_button.description = "Clean patches ({})".format(len(self.patches))
 
+        @out.capture()
+        def _export_results(_):
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            export_file = os.path.join(
+                self.plot_config.get("export_directory", "/tmp"),
+                "psplay_results_{}.pkl".format(timestamp),
+            )
+            pickle.dump(self.patches, open(export_file, "wb"))
+            print("Results exported in '{}'".format(export_file))
+
         self.compute_button.on_click(self._compute_spectra)
         self.clean_button.on_click(_clean_patches)
+        self.export_button.on_click(_export_results)
         self.p = widgets.VBox(
-            [self.tab, accordion, widgets.HBox([self.clean_button, self.compute_button])]
+            [
+                self.tab,
+                accordion,
+                widgets.HBox([self.clean_button, self.export_button, self.compute_button]),
+            ]
         )
 
     def _add_1d_plot(self):
@@ -360,6 +378,7 @@ class App:
         self.compute_button.icon = "gear"
         self.compute_button.disabled = True
         self.clean_button.disabled = True
+        self.export_button.disabled = True
         self.clean_button.description = "Clean patches ({})".format(len(self.patches))
 
         def parse_rectangle(coordinates):
@@ -448,6 +467,7 @@ class App:
         self.compute_button.icon = "check"
         self.compute_button.disabled = False
         self.clean_button.disabled = False
+        self.export_button.disabled = False
 
     def _update_plot(self, _):
         if self.compute_1d.value:

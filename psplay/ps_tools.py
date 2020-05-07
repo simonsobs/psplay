@@ -1,3 +1,4 @@
+import os
 import time
 from copy import deepcopy
 
@@ -135,7 +136,7 @@ def compute_mode_coupling(
     lmax,
     binning_file,
     ps_method="master",
-    beam=None,
+    beam_file=None,
     lmax_pad=None,
     l_exact=None,
     l_band=None,
@@ -159,7 +160,7 @@ def compute_mode_coupling(
     ps_method: string
         the method for the computation of the power spectrum
         can be "master", "pseudo", or "2dflat" for now
-    beam: text file
+    beam_file: text file
         file describing the beam of the map, expect bl to be the second column and start at l=0 (standard is : l,bl, ...)
     lmax_pad: integer
         the maximum multipole to consider for the mcm computation (optional)
@@ -180,8 +181,9 @@ def compute_mode_coupling(
     fsky = enmap.area(window.data.shape, window.data.wcs) / 4.0 / np.pi
     fsky *= np.mean(window.data)
 
-    if beam is not None:
-        beam_data = np.loadtxt(beam)
+    beam = None
+    if beam_file is not None:
+        beam_data = np.loadtxt(beam_file)
         if compute_T_only:
             beam = beam_data[:, 1]
         else:
@@ -444,7 +446,7 @@ def get_covariance(
 
 
 def theory_for_covariance(
-    ps_dict, spec_name_list, spectra, lmax, beam=None, binning_file=None, force_positive=True
+    ps_dict, spec_name_list, spectra, lmax, beam_file=None, binning_file=None, force_positive=True
 ):
 
     ps_dict_for_cov = deepcopy(ps_dict)
@@ -460,8 +462,8 @@ def theory_for_covariance(
                     ps_dict_for_cov["%sx%s" % (m2, m2)][Y + Y]
                 )
 
-    if beam is not None:
-        beam_data = np.loadtxt(beam)
+    if beam_file is not None:
+        beam_data = np.loadtxt(beam_file)
         l, bl = beam_data[:, 0], beam_data[:, 1]
         lb, bb = pspy_utils.naive_binning(l, bl, binning_file, lmax)
         for name in spec_name_list:
@@ -479,7 +481,7 @@ def compute_ps(
     type="Dl",
     binning_file=None,
     bin_size=None,
-    beam=None,
+    beam_file=None,
     galactic_mask=None,
     source_mask=None,
     apo_radius_survey=1,
@@ -501,7 +503,7 @@ def compute_ps(
     maps_info_list: list of dicts describing the data maps
       dictionnary should contain the name, the data type ("IQU" or "I") and optionally a calibration factor to apply to the map
       note that all map in the list should have the same data type
-    beam: text file
+    beam_file: text file
       file describing the beam of the map, expect l,bl
     binning_file: text file
       a binning file with three columns bin low, bin high, bin mean
@@ -533,7 +535,17 @@ def compute_ps(
       lmax_pad should always be greater than lmax
     """
 
+    # Check file path
+    if binning_file is not None:
+        if not os.path.exists(binning_file):
+            raise ValueError("No binning file at '{}'".format(binning_file))
+    if beam_file is not None:
+        if not os.path.exists(beam_file):
+            raise ValueError("No beam file at '{}'".format(beam_file))
+
     if binning_file is None and ps_method != "2dflat":
+        if bin_size is None:
+            raise ValueError("Missing binning size!")
         pspy_utils.create_binning_file(bin_size=bin_size, n_bins=1000, file_name="binning.dat")
         binning_file = "binning.dat"
 
@@ -552,7 +564,7 @@ def compute_ps(
         lmax,
         binning_file,
         ps_method=ps_method,
-        beam=beam,
+        beam_file=beam_file,
         lmax_pad=lmax_pad,
         l_exact=l_exact,
         l_band=l_band,
@@ -576,7 +588,7 @@ def compute_ps(
         return spectra, spec_name_list, ells, ps_dict, None
 
     ps_dict_for_cov = theory_for_covariance(
-        ps_dict, spec_name_list, spectra, lmax, beam=beam, binning_file=binning_file
+        ps_dict, spec_name_list, spectra, lmax, beam_file=beam_file, binning_file=binning_file
     )
 
     cov_dict = get_covariance(

@@ -244,15 +244,19 @@ class App:
             self.m.add_control(WidgetControl(widget=cmap, position="bottomright"))
 
     def _add_theory(self):
-        clth = {}
-        lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
-            self.plot_config.get("theory", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat"),
-            unpack=True,
+        self.theory = None
+        theory_file = self.plot_config.get(
+            "theory_file", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat"
         )
-        clth["ET"] = clth["TE"]
-        for spec in ["EB", "BE", "BT", "TB"]:
-            clth[spec] = np.zeros(clth["TE"].shape)
-        self.theory = {"lth": lth, "clth": clth}
+        if os.path.exists(theory_file):
+            clth = {}
+            lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
+                theory_file, unpack=True,
+            )
+            clth["ET"] = clth["TE"]
+            for spec in ["EB", "BE", "BT", "TB"]:
+                clth[spec] = np.zeros(clth["TE"].shape)
+            self.theory = {"lth": lth, "clth": clth}
 
     def _add_plot(self):
         # Main
@@ -346,7 +350,9 @@ class App:
             step=10,
             description="Bin size",
         )
-        config = widgets.HBox([widgets.VBox([self.use_toeplitz]), widgets.VBox([self.bin_size])])
+        config = widgets.HBox([widgets.VBox([self.use_toeplitz])])
+        if not self.plot_config.get("binning_file"):
+            config.children += (widgets.VBox([self.bin_size]),)
         accordion = widgets.Accordion(children=[config], selected_index=None)
         accordion.set_title(0, "Parameters")
 
@@ -414,7 +420,9 @@ class App:
                     kwargs.update(
                         dict(
                             error_method="master",
+                            binning_file=self.plot_config.get("binning_file"),
                             bin_size=self.bin_size.value,
+                            beam_file=self.plot_config.get("beam_file"),
                             compute_T_only=self.compute_T_only.value,
                             l_exact=800 if self.use_toeplitz.value else None,
                             l_band=2000 if self.use_toeplitz.value else None,
@@ -501,13 +509,14 @@ class App:
                 mode="markers",
                 marker=dict(color=color),
             )
-        self.fig_1d.add_scatter(
-            name="theory",
-            x=self.theory.get("lth")[: self.lmax.value],
-            y=self.theory.get("clth")[self.spectra_1d.value][: self.lmax.value],
-            mode="lines",
-            line=dict(color="gray"),
-        )
+        if self.theory is not None:
+            self.fig_1d.add_scatter(
+                name="theory",
+                x=self.theory.get("lth")[: self.lmax.value],
+                y=self.theory.get("clth")[self.spectra_1d.value][: self.lmax.value],
+                mode="lines",
+                line=dict(color="gray"),
+            )
 
         yaxis_title = r"$D_\ell^\mathrm{%s}$" % spec
         updatemenus = list(

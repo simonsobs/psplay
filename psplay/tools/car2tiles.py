@@ -36,13 +36,12 @@ def car2tiles(
 
     comm = mpi.COMM_WORLD
     if comm.rank == 0:
+        if output_dir is None:
+            output_dir = os.path.join("tiles", input_file)
         # Check if path to fits file are already stored
         fits_files = os.path.join(output_dir, "*/*.fits")
         if fits_files not in enplot_args:
             enplot_args.append(fits_files)
-
-        if output_dir is None:
-            output_dir = os.path.join("leaflet", input_file)
 
         if os.path.exists(output_dir):
             os.system("rm -rf %s" % output_dir)
@@ -117,7 +116,7 @@ def main():
         default=None,
     )
     parser.add_argument(
-        "--output-dir", help="output directory holding png files", type=str, default="leaflet"
+        "--output-dir", help="output directory holding png files", type=str, default=None
     )
     parser.add_argument(
         "--use-enplot",

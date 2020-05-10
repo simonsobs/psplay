@@ -21,7 +21,8 @@ All the specific javascript library developed for ``psplay`` is done by `Sigurd 
 Examples
 --------
 
-* `From healpix map file to psplay <https://github.com/xgarrido/psplay/blob/master/examples/simulation_to_analysis.ipynb>`_
+* `From simulated CAR map to psplay <https://github.com/xgarrido/psplay/blob/master/examples/car_simulation_to_analysis.ipynb>`_
+* `From HEALPIX map file to psplay <https://github.com/xgarrido/psplay/blob/master/examples/healpix_simulation_to_analysis.ipynb>`_
 
 Installation
 ------------

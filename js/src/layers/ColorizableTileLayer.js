@@ -119,9 +119,10 @@ L.TileLayer.Colorizable = L.TileLayer.extend({
 	valueMin: -500,
 	valueMax: +500,
 	scale: 1,
+        scaleAmplitude: 0.1,
 	skew: 1,
 	nbit: 8,
-        tag: undefined
+        tagId: undefined
     },
 
     initialize: function (url, opts) {

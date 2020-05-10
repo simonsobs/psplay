@@ -1,11 +1,25 @@
 map:
   layers:
-    - id: split0
-      fits: split0_IQU_car.fits
-      tiles:
-        path: tiles
+    tags:
+      splits:
+        values: [0, 1]
+        keybindings: [j, k]
 
+      components:
+        values: [0, 1, 2]
+        keybindings: [c, v]
+        substitutes: ["T", "Q", "U"]
+
+
+    tile_tmpl: files/tiles/split{splits}_IQU_car.fits/{z}/tile_{y}_{x}_{components}.png
+    name_tmpl: CMB simulation - split {splits} - {components}
+
+compute:
+  maps:
+    - id: split0
+      file: split0_IQU_car.fits
     - id: split1
-      fits: split1_IQU_car.fits
-      tiles:
-        path: tiles
+      file: split1_IQU_car.fits
+
+plot:
+  theory_file: bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat

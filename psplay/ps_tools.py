@@ -137,7 +137,6 @@ def compute_mode_coupling(
     binning_file,
     ps_method="master",
     beam_file=None,
-    lmax_pad=None,
     l_exact=None,
     l_band=None,
     l_toep=None,
@@ -162,9 +161,6 @@ def compute_mode_coupling(
         can be "master", "pseudo", or "2dflat" for now
     beam_file: text file
         file describing the beam of the map, expect bl to be the second column and start at l=0 (standard is : l,bl, ...)
-    lmax_pad: integer
-        the maximum multipole to consider for the mcm computation (optional)
-        lmax_pad should always be greater than lmax
     save_coupling: str
     compute_T_only: boolean
         True to compute only T spectra
@@ -198,7 +194,6 @@ def compute_mode_coupling(
                 lmax=lmax,
                 type=type,
                 niter=0,
-                lmax_pad=lmax_pad,
                 l_exact=l_exact,
                 l_band=l_band,
                 l_toep=l_toep,
@@ -217,7 +212,6 @@ def compute_mode_coupling(
                 lmax=lmax,
                 type=type,
                 niter=0,
-                lmax_pad=lmax_pad,
                 l_exact=l_exact,
                 l_band=l_band,
                 l_toep=l_toep,
@@ -294,13 +288,13 @@ def get_spectra(
             split.data *= map_info["cal"]
 
         if ps_method in ["master", "pseudo"]:
-            timer.start("SPHT of {} in the patch...".format(map_info["name"]))
+            timer.start("SPHT of {} in the patch...".format(os.path.basename(map_info["name"])))
             alms = sph_tools.get_alms(split, window, niter=0, lmax=lmax + 50)
             ht_list += [alms]
             timer.stop()
 
         elif ps_method == "2dflat":
-            timer.start("FFT of {} in the patch...".format(map_info["name"]))
+            timer.start("FFT of {} in the patch...".format(os.path.basename(map_info["name"])))
             ffts = flat_tools.get_ffts(split, window, lmax)
             ht_list += [ffts]
             timer.stop()
@@ -487,7 +481,6 @@ def compute_ps(
     apo_radius_survey=1,
     compute_T_only=False,
     lmax=1000,
-    lmax_pad=None,
     l_exact=None,
     l_band=None,
     l_toep=None,
@@ -530,9 +523,6 @@ def compute_ps(
       True to compute only T spectra, should always be true for data_type= "I"
     lmax : integer
       the maximum multipole to consider for the spectra computation
-    lmax_pad: integer
-      the maximum multipole to consider for the mcm computation (optional)
-      lmax_pad should always be greater than lmax
     """
 
     # Check file path
@@ -565,7 +555,6 @@ def compute_ps(
         binning_file,
         ps_method=ps_method,
         beam_file=beam_file,
-        lmax_pad=lmax_pad,
         l_exact=l_exact,
         l_band=l_band,
         l_toep=l_toep,

@@ -2,13 +2,14 @@ const L = require('../leaflet-car.js');
 const control = require('jupyter-leaflet');
 
 var keybindings = {};
+var all_keys = [];
 
 var cache = {};
 L.Map.include({
     _updateColors: function (e, layer) {
         if (layer.options && "colormap" in layer.options) {
             if (keybindings["colormap"].includes(e.key)) {
-                console.log("Colormap 1");
+                console.log("Change colormap");
                 var colormap = layer.options.colormap;
                 var colormaps = Object.keys(L.ColorizableUtils.colormaps);
                 for (var i = 0; i < colormaps.length; i++) {
@@ -17,14 +18,12 @@ L.Map.include({
                         break;
                     }
                 }
-            } else if (keybindings["scale"][0] == e.key) {
-                console.log("increase color");
-                var scale = layer.options.scale;
-                layer.options.scale *= 1.1;
-            } else if (keybindings["scale"][1] == e.key) {
-                console.log("decrease color");
-                var scale = layer.options.scale;
-                layer.options.scale /= 1.1;
+            } else {
+                console.log("Change color scale");
+                for (var i = 0; i < keybindings["colorscale"].length; i++) {
+                    if (e.key == keybindings["colorscale"][i])
+                        layer.options.scale *= Math.pow(1. + layer.options.scaleAmplitude, 2*i-1);
+                }
             }
         }
     },
@@ -32,8 +31,19 @@ L.Map.include({
     _fireDOMEvent: function (e, type, targets) {
         if (e.type === 'keypress') {
 
-            var keys = [].concat.apply([], Object.values(keybindings));
-            if (! keys.includes(e.key)) {
+            // Initialize all keys
+            if (all_keys.length == 0) {
+                for (var key in keybindings) {
+                    var keys = keybindings[key];
+                    if (keys.length == undefined)
+                        keys = keys.keys;
+                    for (var i = 0; i < keys.length; i++)
+                        all_keys.push(keys[i]);
+                }
+                console.log("all keys =", all_keys);
+            }
+
+            if (! all_keys.includes(e.key)) {
                 console.log("Key not recognized");
                 this.baseFireDOMEvent(e, type, targets);
                 return;
@@ -56,19 +66,17 @@ L.Map.include({
             var layers = targets[0]._layers;
 
             if (("colormap" in keybindings && keybindings["colormap"].includes(e.key)) ||
-                ("scale" in keybindings && keybindings["scale"].includes(e.key))) {
+                ("colorscale" in keybindings && keybindings["colorscale"].includes(e.key))) {
                 if (this.layer_groups) {
                     console.log("Update color");
                     for (var key in this.layer_groups) {
-                        for (var i = 0; i < this.layer_groups[key].length; i++) {
-                            this._updateColors(e, this.layer_groups[key][i]);
-                        }
+                        this._updateColors(e, this.layer_groups[key]);
                     }
                 }
                 // Update current layer
                 for (var key in layers) {
                     var layer = layers[key];
-                    if (layer.options && "tag" in layer.options) {
+                    if (layer.options && "tagId" in layer.options) {
                         layer._updateTiles();
                     }
                 }
@@ -76,22 +84,27 @@ L.Map.include({
                 return;
             }
 
-            // Look into tag field
-            if ("layer" in keybindings && keybindings["layer"].includes(e.key)) {
-                console.log("Change layer");
-                // Update current layer
-                for (var key in layers) {
-                    var layer = layers[key];
-                    if (layer.options && "tag" in layer.options && "tagId" in layer.options) {
-                        var tag = layer.options.tag;
-                        var tagId = layer.options.tagId;
-                        if (e.key == keybindings["layer"][0])
-                            tagId = (tagId + 1) % this.layer_groups[tag].length;
-                        if (e.key == keybindings["layer"][1])
-                            tagId = (tagId - 1) % this.layer_groups[tag].length;
-
-                        if (tagId == -1) tagId += this.layer_groups[tag].length;
-                        this.addLayer(this.layer_groups[tag][tagId]);
+            for (var key in layers) {
+                var layer = layers[key];
+                if (layer.options && "tagId" in layer.options) {
+                    var found = false;
+                    for (var key in keybindings) {
+                        var keys = keybindings[key];
+                        if (keys.length != undefined) continue;
+                        keys = keys.keys;
+                        for (var i = 0; i < keys.length; i++) {
+                            if (e.key == keys[i]) {
+                                var tagId = layer.options.tagId;
+                                tagId += (2*i-1) * Math.pow(10, keybindings[key].level);
+                                if (!(tagId in this.layer_groups)) {
+                                    tagId -= (2*i-1) * Math.pow(10, keybindings[key].level) * keybindings[key].depth;
+                                }
+                                this.addLayer(this.layer_groups[tagId]);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) break;
                     }
                 }
             }
@@ -103,7 +116,7 @@ L.Map.include({
     removeAllLayers: function() {
         var map = this;
         this.eachLayer(function(layer) {
-            if (layer.options && "tag" in layer.options) {
+            if (layer.options && "tagId" in layer.options) {
                 map.removeLayer(layer);
             }
         });
@@ -114,21 +127,15 @@ L.Map.include({
         if (!("layer_groups" in this))
 	    this.layer_groups = {};
 
-        if (layer.options && "tag" in layer.options) {
-            var tag = layer.options.tag;
-            console.log("Add layer with tag", tag);
+        if (layer.options && "tagId" in layer.options) {
+            var tagId = layer.options.tagId;
+            console.log("Add layer with tag id", tagId);
 
-            if (!(tag in this.layer_groups)) {
-                this.layer_groups[tag] = [];
-            }
-
-            var tagId = this.layer_groups[tag].length;
-            if (!("tagId" in layer.options)) {
-                layer.options.tagId = tagId;
-                this.layer_groups[tag].push(layer);
+            if (!(tagId in this.layer_groups)) {
                 layer.setCache(cache);
+                this.layer_groups[tagId] = layer;
                 // Only load the first one
-                if (tagId == 0)
+                if (Object.keys(this.layer_groups).length == 1)
                     this.baseAddLayer(layer);
             } else {
                 // First remove all layers from map
@@ -171,12 +178,20 @@ L.Control.KeyBinding = L.Control.extend({
 	    text += "<ul>";
             for (var key in keybindings) {
                 var keys = keybindings[key];
+                if (keys.length == undefined)
+                    keys = keys.keys;
                 text += "<li> Use ";
                 if (keys.length == 2)
                     text += "<b>" + keys[0] + "/" + keys[1] + "</b> keys";
                 else
                     text += "<b>" + keys[0] + "</b> key";
-                text += " to change " + key + "</li>";
+                if (key == "cache")
+                    text += " to clean the cache";
+                else if (key == "colorscale")
+                    text += " to change color scale by &plusmn; 10%";
+                else
+                    text += " to change <b>" + key + "</b>";
+                text += "</li>";
             }
             text += "</ul>"
         }

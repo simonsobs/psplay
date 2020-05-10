@@ -1,6 +1,6 @@
 {
     "name": "jupyter-leaflet-car",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "jupyter - leaflet bridge for CAR maps",
     "keywords": [
         "jupyter",

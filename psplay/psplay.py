@@ -12,11 +12,12 @@ import yaml
 
 import plotly.graph_objects as go
 from ipyleaflet import (DrawControl, FullScreenControl, LayersControl, Map,
-                        MapStyle, WidgetControl)
+                        MapStyle, Polygon, WidgetControl)
 
 from . import utils
-from .ipyleaflet import (ColorizableTileLayer, Graticule, KeyBindingControl,
-                         StatusBarControl, allowed_colormaps)
+from .ipyleaflet import (Circle, ColorizableTileLayer, Graticule,
+                         KeyBindingControl, StatusBarControl,
+                         allowed_colormaps)
 from .ps_tools import compute_ps
 
 # Default SO attribution for tiles
@@ -146,7 +147,11 @@ class App:
                 raise ValueError("Missing patch id from GeoJSON!")
             if action in ["created", "edited"]:
                 patches[patch_id] = geo_json
-                patches[patch_id].update({"results": None})
+                patches[patch_id].update({"results": None, "buffer": None})
+                if action == "edited":
+                    # Reset buffers for all patches
+                    for patch in patches.values():
+                        patch.update({"buffer": None})
             if action == "deleted":
                 del patches[patch_id]
 
@@ -163,7 +168,7 @@ class App:
                 min=0,
                 max=2.0,
                 step=0.01,
-                description="scale",
+                description="Scale",
                 continuous_update=True,
                 orientation="vertical",
                 readout_format=".2f",
@@ -188,6 +193,45 @@ class App:
 
             cmap.observe(on_cmap_change, names="value")
             self.m.add_control(WidgetControl(widget=cmap, position="bottomright"))
+
+        if widgets_config.get("use_buffer_control", False):
+            buffer_size = widgets.FloatSlider(
+                description="Buffer (deg.)", min=0, max=10, step=0.1, readout_format=".1f"
+            )
+
+            def on_buffer_size_change(change):
+                for name, patch in self.patches.items():
+                    geometry = utils.build_patch_geometry(patch)
+                    buffer = patch.get("buffer")
+                    if not buffer:
+                        # Create buffer
+                        if geometry["patch_type"] == "Disk":
+                            shape = Circle(
+                                location=geometry["center"],
+                                dash_array="1, 10",
+                                fill=False,
+                                radius=geometry["radius"],
+                            )
+                        if geometry["patch_type"] == "Rectangle":
+                            # Use Polygon instead of Rectangle shape since locations are sync and
+                            # not Rectangle bounds
+                            shape = Polygon(
+                                locations=utils.build_polygon_geometry(patch),
+                                dash_array="1, 10",
+                                fill=False,
+                            )
+                        self.m.add_layer(shape)
+                        shape.color = patch.get("properties").get("style").get("color")
+                        patch.update({"buffer": shape})
+                    else:
+                        if isinstance(buffer, Circle):
+                            buffer.radius = geometry["radius"] + change["new"]
+                            buffer.location = geometry["center"]
+                        if isinstance(buffer, Polygon):
+                            buffer.locations = utils.build_polygon_geometry(patch, change["new"])
+
+            buffer_size.observe(on_buffer_size_change, names="value")
+            self.m.add_control(WidgetControl(widget=buffer_size, position="bottomright"))
 
     def _add_compute(self):
         # Store original fits map
@@ -274,6 +318,10 @@ class App:
         self.export_button = widgets.Button(description="Export results", icon="download")
 
         def _clean_patches(_):
+            # Clean buffer if any
+            for name, patch in self.patches.items():
+                if "buffer" in patch:
+                    self.m.remove_layer(patch["buffer"])
             self.patches.clear()
             self.draw_control.clear()
             self.clean_button.description = "Clean patches ({})".format(len(self.patches))

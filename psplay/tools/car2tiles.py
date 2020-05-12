@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-from pixell import enplot, mpi, wcsutils
+from pixell import enplot, mpi
 from pspy import so_map
 
 from . import tile_utils_sigurd, webplot
@@ -50,8 +50,9 @@ def car2tiles(
             car = so_map.read_map(input_file)
             mask = so_map.read_map(mask_file)
 
-            if not wcsutils.is_compatible(mask.geometry[0], car.geometry[0]):
-                raise ValueError("Map and mask must have compatible geometries")
+            # from pixell import wcsutils
+            # if not wcsutils.is_compatible(mask.geometry[0], car.geometry[0]):
+            #     raise ValueError("Map and mask must have compatible geometries")
 
             if mask.ncomp == car.ncomp == 1:
                 car.data *= np.where(mask.data < 0.5, 0, 1)

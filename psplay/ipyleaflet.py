@@ -3,12 +3,16 @@
 #
 from traitlets import CFloat, CInt, Dict, Enum, Unicode, default, validate
 
-from ipyleaflet import Control, Layer, LocalTileLayer, allowed_crs
+from ipyleaflet import Circle, Control, Layer, LocalTileLayer, allowed_crs
 
 from ._version import EXTENSION_VERSION
 
 allowed_crs += ["CAR"]
 allowed_colormaps = ["gray", "planck", "wmap", "hotcold"]
+
+
+class Circle(Circle):
+    radius = CFloat(10, help="radius of circle in degrees").tag(sync=True, o=True)
 
 
 class Graticule(Layer):

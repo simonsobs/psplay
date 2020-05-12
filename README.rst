@@ -46,7 +46,7 @@ especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the 
 
 
 Finally, you need to install the `jupyter-leaflet-car
-<https://www.npmjs.com/package/jupyter-leaflet-car>`_ and the support for widgets in Jupyter
+<https://www.npmjs.com/package/jupyter-leaflet-car>`_ extension
 
 .. code:: shell
 

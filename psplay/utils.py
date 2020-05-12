@@ -119,6 +119,19 @@ def build_patch_geometry(patch):
     return patch_dict
 
 
+def build_polygon_geometry(patch, increment=0):
+    geometry = patch.get("geometry")
+    if geometry.get("type") == "Polygon":
+        coordinates = geometry.get("coordinates")
+        y = [y[0] for y in coordinates[0]]
+        x = [x[1] for x in coordinates[0]]
+        xc = np.mean([x[0], x[1]])
+        yc = np.mean([y[-1], y[-2]])
+        x = [x + np.sign(x - xc) * increment for x in x]
+        y = [y + np.sign(y - yc) * increment for y in y]
+        return list(zip(x, y))
+
+
 def check_beam(beam_file):
     l, bl = np.loadtxt(beam_file, unpack=True)
     plt.plot(l, bl)

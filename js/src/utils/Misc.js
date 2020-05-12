@@ -82,6 +82,29 @@ L.EditToolbar.Edit.include({
 	    }
 	});
 	this._map.fire(L.Draw.Event.EDITED, {layers: editedLayers});
+        // Remove buffers
+        var map = this._map;
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.Circle || layer instanceof L.Polygon) {
+                if (layer.options && layer.options.fill == false)
+                    map.removeLayer(layer);
+            }
+        });
+    },
+});
+
+L.EditToolbar.Delete.include({
+    baseRemoveAllLayers: L.EditToolbar.Delete.prototype.removeAllLayers,
+    removeAllLayers: function () {
+        console.log("Remove all layers");
+        this.baseRemoveAllLayers();
+        var map = this._map;
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.Circle || layer instanceof L.Polygon) {
+                map.removeLayer(layer);
+            }
+        });
+
     },
 });
 

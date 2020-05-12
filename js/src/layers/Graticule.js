@@ -17,7 +17,6 @@ L.LatLngGraticule = L.Layer.extend({
         showLabel: true,
         opacity: 1,
         weight: 0.2,
-        weight: 0.2,
         color: '#000',
         fontColor: '#666',
         font: '12px Verdana',

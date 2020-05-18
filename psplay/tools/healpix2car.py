@@ -5,7 +5,7 @@ from pspy import so_map
 
 def healpix2car(
     input_file,
-    fields=(0, 1, 2),
+    fields=None,
     mask_file=None,
     output_file=None,
     resolution=0.5,
@@ -83,7 +83,7 @@ def main():
         "--fields",
         help="tuple that enables HEALPIX fields i.e. (0,) will only keep temperature field ",
         type=tuple,
-        default=(0, 1, 2),
+        default=None,
     )
     parser.add_argument(
         "--bounding-box",
@@ -102,9 +102,13 @@ def main():
     )
     args = parser.parse_args()
 
+    fields = args.fields
+    if fields is not None:
+        fields = ([int(i) for i in args.fields],)
+
     healpix2car(
         input_file=args.input_file,
-        fields=[int(i) for i in args.fields],
+        fields=fields,
         mask_file=args.mask_file,
         output_file=args.output_file,
         resolution=args.resolution,

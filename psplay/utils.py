@@ -1,3 +1,4 @@
+from copy import deepcopy
 from itertools import product
 
 import matplotlib.pyplot as plt
@@ -9,90 +10,118 @@ from . import ps_tools
 def get_tiles(layers):
     """ Fonction that converts a dictionary into a complete list of tiles """
 
-    # Set color range
-    vrange = [[-500, +500], [-100, +100], [-100, +100]]
-    _range = layers.get("range")
-    if _range:
-        _val = _range.get("temperature")
-        vrange[0] = [-_val, +_val] if _val else vrange[0]
-        _val = _range.get("polarization")
-        vrange[1] = [-_val, +_val] if _val else vrange[1]
-        vrange[2] = vrange[1] if _val else vrange[2]
-    for i, j in enumerate(["min", "max"]):
-        _m = layers.get(j)
-        if _m:
-            _val = _m.get("temperature")
-            vrange[0][i] = _val if _val is not None else vrange[0][i]
-            _val = _m.get("polarization")
-            vrange[1][i] = _val if _val is not None else vrange[1][i]
-            vrange[2][i] = vrange[1][i] if _val is not None else vrange[2][i]
-
-    tags = layers.get("tags")
-    path = layers.get("path", "files/")
-    tile_tmpl = layers.get("tile_tmpl", "")
-    name_tmpl = layers.get("name_tmpl", "")
-
-    tile_dict = dict(x="{x}", y="{y}", z="{z}", path=path)
-    name_dict = dict()
-
-    if not tags:
-        return [
-            dict(
-                tag_id=0,
-                url=tile_tmpl,
-                name=name_tmpl,
-                attribution="",
-                value_min=vrange[0][0],
-                value_max=vrange[0][1],
-            )
-        ]
-
-    tiles = []
-    keys = list(tags.keys())
-    values = [value.get("values") for value in tags.values()]
-    for value in product(*values):
-        tag_id = 0
-        for i, v in enumerate(value):
-            tag = tags.get(keys[i])
-            idx = tag.get("values").index(v)
-            tag_id += idx * 10 ** i
-
-            tile_dict.update({keys[i]: v})
-            name_dict.update({keys[i]: v})
-            if tag.get("substitutes"):
-                name_dict.update({keys[i]: tag.get("substitutes")[idx]})
-
-        url = tile_tmpl.format(**tile_dict)
-        name = name_tmpl.format(**name_dict)
-        # Hardcode temperature vs. polarization range
-        value_min, value_max = vrange[0] if "T" in name_dict.values() else vrange[1]
-        tiles += [
-            dict(
-                tag_id=tag_id,
-                url=url,
-                name=name,
-                attribution=name,
-                value_min=value_min,
-                value_max=value_max,
-            )
-        ]
-
-    return tiles
-
-
-def get_keybindings(layers):
     keybindings = {}
-    keybindings.update(
-        {k: v.get("keybindings") for k, v in layers.items() if "keybindings" in v and k != "tags"}
-    )
-    tags = layers.get("tags", {})
-    keybindings.update(
-        {
-            k: dict(keys=v.get("keybindings"), level=i, depth=len(v.get("values")))
-            for i, (k, v) in enumerate(tags.items())
-        }
-    )
-    return keybindings
+    tiles = []
+
+    for ilayer, layer in enumerate(layers):
+        # name = str(*layer.keys())
+        layer = dict(*layer.values())
+
+        overlay = layer.get("overlay", False)
+        opacity = layer.get("opacity", 0.5 if overlay else 1.0)
+        # Add keybindings to change opacity or layer level
+        if overlay:
+            keybindings.update(dict(opacity=["o", "p"], overlay=["m"]))
+        else:
+            keybindings.update({"layer": dict(keys=["n"], level=0, depth=ilayer)})
+
+        # Colormap
+        scale_amplitude = layer.get("colorscale", {}).get("amplitude", 0.1)
+        block = layer.get("colormap", {})
+        colormap = block.get("name", "hotcold" if overlay else "planck")
+        if block.get("keybindings"):
+            keybindings.update({"colormap": block.get("keybindings")})
+
+        # Set color range
+        vrange = [[-500, +500], [-100, +100], [-100, +100]]
+        _range = layer.get("range")
+        if _range:
+            _val = _range.get("temperature")
+            vrange[0] = [-_val, +_val] if _val else vrange[0]
+            _val = _range.get("polarization")
+            vrange[1] = [-_val, +_val] if _val else vrange[1]
+            vrange[2] = vrange[1] if _val else vrange[2]
+        for i, j in enumerate(["min", "max"]):
+            _m = layer.get(j)
+            if _m:
+                _val = _m.get("temperature")
+                vrange[0][i] = _val if _val is not None else vrange[0][i]
+                _val = _m.get("polarization")
+                vrange[1][i] = _val if _val is not None else vrange[1][i]
+                vrange[2][i] = vrange[1][i] if _val is not None else vrange[2][i]
+
+        tags = layer.get("tags", {})
+        path = layer.get("path", "files/")
+        tile_tmpl = layer.get("tile", "")
+        name_tmpl = layer.get("name", "")
+
+        tile_dict = dict(path=path, x="{x}", y="{y}", z="{z}")
+        name_dict = dict()
+
+        tile_config = dict(
+            base=not overlay,
+            opacity=opacity,
+            url=tile_tmpl,
+            name=name_tmpl,
+            attribution=name_tmpl,
+            value_min=vrange[0][0],  # if not overlay else 1,
+            value_max=vrange[0][1],  # if not overlay else 0,
+            colormap=colormap,
+            scale_amplitude=scale_amplitude,
+            tag_id=ilayer,
+        )
+
+        if not tags:
+            tiles += [tile_config]
+        else:
+            # Grab keybindings
+            for i, (k, v) in enumerate(tags.items()):
+                if "keybindings" not in v:
+                    raise ValueError("Missing 'keybindings' for '{}' tag".format(k))
+                keybindings.update(
+                    {
+                        k: dict(
+                            keys=v.get("keybindings"),
+                            level=i + 1,
+                            depth=len(v.get("values") or []),
+                        )
+                    }
+                )
+
+            # Generate all combinations
+            values = [value.get("values") for value in tags.values()]
+            for value in product(*values):
+                tag_id = 0
+                for i, v in enumerate(value):
+                    key = list(tags.keys())[i]
+                    tag = tags.get(key)
+                    idx = tag.get("values").index(v)
+                    tag_id += idx * 10 ** (i + 1)
+
+                    tile_dict.update({key: v})
+                    name_dict.update({key: v})
+                    if tag.get("substitutes"):
+                        name_dict.update({key: tag.get("substitutes")[idx]})
+
+                # Hardcode temperature vs. polarization range
+                value_min, value_max = vrange[0] if "T" in name_dict.values() else vrange[1]
+                updated_config = deepcopy(tile_config)
+                updated_config.update(
+                    dict(
+                        tag_id=tag_id,
+                        url=tile_tmpl.format(**tile_dict),
+                        name=name_tmpl.format(**name_dict),
+                        attribution=name_tmpl.format(**name_dict),
+                        value_min=value_min,
+                        value_max=value_max,
+                    )
+                )
+                tiles += [updated_config]
+
+    # Remove layer keybindings if only one
+    if keybindings.get("layer", {}).get("depth", 0) == 0:
+        del keybindings["layer"]
+    return tiles, keybindings
 
 
 def build_patch_geometry(patch):
@@ -132,17 +161,27 @@ def build_polygon_geometry(patch, increment=0):
         return list(zip(x, y))
 
 
-def check_beam(beam_file):
-    l, bl = np.loadtxt(beam_file, unpack=True)
+def check_beam(app):
+    l, bl = np.loadtxt(app.plot_config.get("beam_file"), unpack=True)
     plt.plot(l, bl)
     plt.xlabel(r"$\ell$")
     plt.ylabel(r"$b_\ell$")
 
 
-def check_window(maps, patches):
-    npatches = len(patches)
-    fig, axes = plt.subplots(npatches // 2, npatches // 2)
-    for ipatch, (name, patch) in enumerate(patches.items()):
+def check_window(app):
+    npatches = len(app.patches)
+    fig, axes = plt.subplots(npatches // 2 or 1, npatches // 2 or 1)
+    for ipatch, (name, patch) in enumerate(app.patches.items()):
         patch_geometry = build_patch_geometry(patch)
-        car_box, window = ps_tools.create_window(patch_geometry, maps)
-        axes[ipatch // 2, ipatch % 2].imshow(window.data)
+        car_box, window = ps_tools.create_window(
+            patch_geometry,
+            app.maps_info_list,
+            source_mask=app.masks_info_list.get("source"),
+            galactic_mask=app.masks_info_list.get("galactic"),
+        )
+        ax = axes if npatches == 1 else axes[ipatch // 2, ipatch % 2]
+        extent = [car_box[1][1], car_box[0][1], car_box[0][0], car_box[1][0]]
+        print(car_box, extent)
+        ax.imshow(window.data, extent=extent)
+        ax.set_xlabel("RA")
+        ax.set_ylabel("DEC")

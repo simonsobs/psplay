@@ -11,12 +11,12 @@ import numpy as np
 import yaml
 
 import plotly.graph_objects as go
-from ipyleaflet import (DrawControl, FullScreenControl, LayersControl, Map,
-                        MapStyle, Polygon, WidgetControl)
+from ipyleaflet import (DrawControl, FullScreenControl, Map, MapStyle, Polygon,
+                        WidgetControl)
 
 from . import utils
 from .ipyleaflet import (Circle, ColorizableTileLayer, Graticule,
-                         KeyBindingControl, StatusBarControl,
+                         KeyBindingControl, LayersControl, StatusBarControl,
                          allowed_colormaps)
 from .ps_tools import compute_ps
 
@@ -57,7 +57,6 @@ class App:
                 self.config = yaml.load(stream, Loader=yaml.FullLoader)
 
         self.map_config = _get_section(self.config, "map")
-        self.compute_config = _get_section(self.config, "compute")
         self.plot_config = _get_section(self.config, "plot")
 
         self.m = None
@@ -87,26 +86,23 @@ class App:
 
     def _add_layers(self):
         layers = self.map_config.get("layers", {})
-        tiles = utils.get_tiles(layers)
         tile_default = dict(
-            base=True,
             min_zoom=-5,
             max_zoom=+5,
             min_native_zoom=-5,
             max_native_zoom=0,
             tile_size=675,
             show_loading=False,
-            colormap=layers.get("colormap", {}).get("name", "planck"),
-            scale_amplitude=layers.get("colorscale", {}).get("amplitude", 0.1),
         )
-        for tile in tiles:
+        self.tiles, self.keybindings = utils.get_tiles(layers)
+        for tile in self.tiles:
             tile_config = deepcopy(tile_default)
             tile_config.update(**tile)
             self.layers.append(ColorizableTileLayer(**tile_config))
 
     def _add_map(self):
         default_keybindings = dict(colormap=["g"], colorscale=["u", "i"], cache=["z"])
-        default_keybindings.update(utils.get_keybindings(self.map_config.get("layers", {})))
+        default_keybindings.update(self.keybindings)
         self.m = Map(
             layers=self.layers,
             controls=(
@@ -160,7 +156,7 @@ class App:
 
         widgets_config = self.map_config.get("widgets", {})
         if widgets_config.get("use_layer_control", False):
-            self.m.add_control(LayersControl(position="bottomleft"))
+            self.m.add_control(LayersControl(position="bottomleft", collapsed=False))
 
         if widgets_config.get("use_scale_control", False):
             scale = widgets.FloatSlider(
@@ -236,7 +232,7 @@ class App:
     def _add_compute(self):
         # Store original fits map
         self.maps_info_list = list()
-        for imap in self.compute_config.get("maps", []):
+        for imap in self.plot_config.get("maps", []):
             self.maps_info_list.append(
                 dict(
                     id=_get_section(imap, "id"),
@@ -247,7 +243,7 @@ class App:
             )
 
         self.masks_info_list = dict()
-        for imask in self.compute_config.get("masks", []):
+        for imask in self.plot_config.get("masks", []):
             mask_info = dict(name=_get_section(imask, "file"))
             apodization = imask.get("apodization")
             if apodization:
@@ -289,7 +285,7 @@ class App:
             value=False, description="Only temperature", layout=layout
         )
         self.lmax = widgets.IntSlider(
-            value=self.compute_config.get("lmax", 1000),
+            value=self.plot_config.get("lmax", 1000),
             min=0,
             max=10000,
             step=100,
@@ -364,14 +360,14 @@ class App:
         # Config
         self.use_toeplitz = widgets.Checkbox(value=False, description="Use Toeplitz approx.")
         self.bin_size = widgets.IntSlider(
-            value=self.compute_config.get("bin size", 40),
+            value=self.plot_config.get("bin size", 40),
             min=0,
             max=200,
             step=10,
             description="Bin size",
         )
         config = widgets.HBox([widgets.VBox([self.use_toeplitz])])
-        if not self.compute_config.get("binning_file"):
+        if not self.plot_config.get("binning_file"):
             config.children += (widgets.VBox([self.bin_size]),)
         accordion = widgets.Accordion(children=[config], selected_index=None)
         accordion.set_title(0, "Parameters")
@@ -420,9 +416,9 @@ class App:
                     kwargs.update(
                         dict(
                             error_method="master",
-                            binning_file=self.compute_config.get("binning_file"),
+                            binning_file=self.plot_config.get("binning_file"),
                             bin_size=self.bin_size.value,
-                            beam_file=self.compute_config.get("beam_file"),
+                            beam_file=self.plot_config.get("beam_file"),
                             source_mask=self.masks_info_list.get("source"),
                             galactic_mask=self.masks_info_list.get("galactic"),
                             compute_T_only=self.compute_T_only.value,

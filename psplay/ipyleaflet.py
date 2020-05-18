@@ -1,9 +1,11 @@
 # Copyright (c) Simons Observatory.
 # Distributed under the terms of the Modified BSD License.
 #
-from traitlets import CFloat, CInt, Dict, Enum, Unicode, default, validate
+from traitlets import (Bool, CFloat, CInt, Dict, Enum, Unicode, default,
+                       validate)
 
-from ipyleaflet import Circle, Control, Layer, LocalTileLayer, allowed_crs
+from ipyleaflet import (Circle, Control, Layer, LayersControl, LocalTileLayer,
+                        allowed_crs)
 
 from ._version import EXTENSION_VERSION
 
@@ -13,6 +15,10 @@ allowed_colormaps = ["gray", "planck", "wmap", "hotcold"]
 
 class Circle(Circle):
     radius = CFloat(10, help="radius of circle in degrees").tag(sync=True, o=True)
+
+
+class LayersControl(LayersControl):
+    collapsed = Bool(False).tag(sync=True, o=True)
 
 
 class Graticule(Layer):
@@ -36,12 +42,13 @@ class ColorizableTileLayer(LocalTileLayer):
     _view_module_version = Unicode(EXTENSION_VERSION).tag(sync=True)
     _model_module_version = Unicode(EXTENSION_VERSION).tag(sync=True)
 
+    base = Bool(False).tag(sync=True, o=True)
     colormap = Enum(values=allowed_colormaps, default_value="planck").tag(sync=True, o=True)
     value_min = CFloat(-500).tag(sync=True, o=True)
     value_max = CFloat(+500).tag(sync=True, o=True)
     scale = CFloat(1.0).tag(sync=True, o=True)
     scale_amplitude = CFloat(0.1).tag(sync=True, o=True)
-    tag_id = CInt(0).tag(sync=True, o=True)
+    tag_id = CInt(None, allow_none=True).tag(sync=True, o=True)
 
 
 class StatusBarControl(Control):

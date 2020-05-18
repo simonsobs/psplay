@@ -41,7 +41,7 @@ L.Control.StatusBar = L.Control.extend({
 		// Add map value if available
 		var layer = null;
 		e.target.eachLayer(function (l) {
-		    if (!layer && "options" in l && "colormap" in l.options) {
+		    if (!layer && "options" in l && "colormap" in l.options && "base" in l.options && l.options.base) {
 			layer = l;
                     }
 

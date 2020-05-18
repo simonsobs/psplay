@@ -2,7 +2,6 @@ const L = require('../leaflet-car.js');
 const control = require('jupyter-leaflet');
 
 var keybindings = {};
-var all_keys = [];
 
 var cache = {};
 L.Map.include({
@@ -32,18 +31,19 @@ L.Map.include({
         if (e.type === 'keypress') {
 
             // Initialize all keys
-            if (all_keys.length == 0) {
+            if (!("all_keys" in this)) {
+                this.all_keys = [];
                 for (var key in keybindings) {
                     var keys = keybindings[key];
                     if (keys.length == undefined)
                         keys = keys.keys;
                     for (var i = 0; i < keys.length; i++)
-                        all_keys.push(keys[i]);
+                        this.all_keys.push(keys[i]);
                 }
-                console.log("all keys =", all_keys);
+                console.log("all keys =", this.all_keys);
             }
 
-            if (! all_keys.includes(e.key)) {
+            if (! this.all_keys.includes(e.key)) {
                 console.log("Key not recognized");
                 this.baseFireDOMEvent(e, type, targets);
                 return;
@@ -51,7 +51,6 @@ L.Map.include({
 
             console.log("Overload fireDOM: key press");
             console.log("e.key =", e.key);
-            console.log("type =", type)
 
             if ("cache" in keybindings && keybindings["cache"].includes(e.key)) {
                 console.log("Clean cache");
@@ -65,18 +64,19 @@ L.Map.include({
 	    if (!targets.length) { return; }
             var layers = targets[0]._layers;
 
+            // Update color map or color scale
             if (("colormap" in keybindings && keybindings["colormap"].includes(e.key)) ||
                 ("colorscale" in keybindings && keybindings["colorscale"].includes(e.key))) {
-                if (this.layer_groups) {
-                    console.log("Update color");
-                    for (var key in this.layer_groups) {
-                        this._updateColors(e, this.layer_groups[key]);
+                if (this.layers_group) {
+                    for (var key in this.layers_group) {
+                        this._updateColors(e, this.layers_group[key]);
                     }
                 }
-                // Update current layer
+                // Update current base layer (not overlays if any)
                 for (var key in layers) {
                     var layer = layers[key];
-                    if (layer.options && "tagId" in layer.options) {
+                    if (layer.options && "base" in layer.options && layer.options.base) {
+                        console.log("update tiles", layer.options.tagId);
                         layer._updateTiles();
                     }
                 }
@@ -84,25 +84,74 @@ L.Map.include({
                 return;
             }
 
+            // Overlay opacity
+            if (("opacity" in keybindings && keybindings["opacity"].includes(e.key))) {
+                if (this.overlays_group) {
+                    for (var key in this.overlays_group) {
+                        var layer = this.overlays_group[key];
+                        for (var i = 0; i < keybindings["opacity"].length; i++) {
+                            var opacity = layer.options.opacity;
+                            if (e.key == keybindings["opacity"][i])
+                                opacity *= Math.pow(1.1, 2*i-1);
+                            if (opacity > 1.0) opacity = 1.0;
+                            if (opacity < 0.0) opacity = 0.0;
+                            layer.setOpacity(opacity);
+                        }
+                    }
+                }
+                this.baseFireDOMEvent(e, type, targets);
+                return;
+            }
+
+            // Overlay masking
+            if ("overlay" in keybindings && keybindings["overlay"].includes(e.key)) {
+                var overlays = [];
+                for (var key in layers) {
+                    var layer = layers[key];
+                    if (layer.options && "base" in layer.options && !(layer.options.base)) {
+                        overlays.push(layer);
+                    }
+                }
+                if (overlays.length == 0) {
+                    for (key in this.overlays_group) {
+                        this.baseAddLayer(this.overlays_group[key]);
+                    }
+                } else {
+                    for (var i = 0; i < overlays.length; i++) {
+                        this.removeLayer(overlays[i]);
+                    }
+                }
+                this.baseFireDOMEvent(e, type, targets);
+                return;
+            }
+
+            // Finally switch between (base) layers
             for (var key in layers) {
                 var layer = layers[key];
                 if (layer.options && "tagId" in layer.options) {
                     var found = false;
                     for (var key in keybindings) {
                         var keys = keybindings[key];
-                        if (keys.length != undefined) continue;
-                        keys = keys.keys;
+                        if (keys.length == undefined) keys = keys.keys;
                         for (var i = 0; i < keys.length; i++) {
-                            if (e.key == keys[i]) {
-                                var tagId = layer.options.tagId;
+                            if (e.key != keys[i]) continue;
+                            var tagId = layer.options.tagId;
+                            if (key == "layer") {
+                                tagId = parseInt(tagId.toString()[keybindings[key].level]) + 1;
+                                if (!(tagId in this.layers_group)) {
+                                    tagId = 0;
+                                }
+                            } else {
                                 tagId += (2*i-1) * Math.pow(10, keybindings[key].level);
-                                if (!(tagId in this.layer_groups)) {
+                                if (!(tagId in this.layers_group)) {
                                     tagId -= (2*i-1) * Math.pow(10, keybindings[key].level) * keybindings[key].depth;
                                 }
-                                this.addLayer(this.layer_groups[tagId]);
-                                found = true;
-                                break;
                             }
+                            if (tagId in this.layers_group) {
+                                this.addLayer(this.layers_group[tagId]);
+                            }
+                            found = true;
+                            break;
                         }
                         if (found) break;
                     }
@@ -115,32 +164,49 @@ L.Map.include({
     },
     removeAllLayers: function() {
         var map = this;
+        this.overlays = [];
         this.eachLayer(function(layer) {
             if (layer.options && "tagId" in layer.options) {
+                console.log("Removing layer with tag", layer.options.tagId);
+                if ("base" in layer.options && !(layer.options.base)) {
+                    map.overlays.push(layer);
+                }
                 map.removeLayer(layer);
             }
         });
     },
     baseAddLayer: L.Map.prototype.addLayer,
     addLayer: function (layer) {
-
-        if (!("layer_groups" in this))
-	    this.layer_groups = {};
+        if (!("overlays" in this))
+            this.overlays = [];
+        if (!("layers_group" in this))
+	    this.layers_group = {};
+        if (!("overlays_group" in this))
+	    this.overlays_group = {};
 
         if (layer.options && "tagId" in layer.options) {
             var tagId = layer.options.tagId;
             console.log("Add layer with tag id", tagId);
 
-            if (!(tagId in this.layer_groups)) {
-                layer.setCache(cache);
-                this.layer_groups[tagId] = layer;
+            var groups = this.overlays_group;
+            if ("base" in layer.options && layer.options.base) {
+                groups = this.layers_group;
+            }
+            if (!(tagId in groups)) {
+                groups[tagId] = layer;
+                if ("base" in layer.options && layer.options.base) {
+                    layer.setCache(cache);
+                }
                 // Only load the first one
-                if (Object.keys(this.layer_groups).length == 1)
+                if (Object.keys(groups).length == 1)
                     this.baseAddLayer(layer);
             } else {
                 // First remove all layers from map
                 this.removeAllLayers();
                 this.baseAddLayer(layer);
+                // Add back activated overlays
+                for (var i = 0; i < this.overlays.length; i++)
+                    this.baseAddLayer(this.overlays[i]);
             }
         } else {
             // Anything else (graticule for instance)
@@ -189,6 +255,10 @@ L.Control.KeyBinding = L.Control.extend({
                     text += " to clean the cache";
                 else if (key == "colorscale")
                     text += " to change color scale by &plusmn; 10%";
+                else if (key == "opacity")
+                    text += " to change overlay opacity by &plusmn; 10%";
+                else if (key == "overlay")
+                    text += " to show/hide overlays";
                 else
                     text += " to change <b>" + key + "</b>";
                 text += "</li>";

@@ -157,8 +157,14 @@ L.FeatureGroup.include({
 L.Control.Layers.include({
     baseInitialize: L.Control.Layers.prototype.initialize,
     initialize: function (baseLayers, overlays, options) {
-        options.collapsed = false;
+        delete overlays['graticule'];
         this.baseInitialize(baseLayers, overlays, options);
+    },
+    baseUpdate: L.Control.Layers.prototype._update,
+    _update: function () {
+        this.baseUpdate();
+        this._baseLayersList.style.display = 'none';
+        this._separator.style.display = 'none';
     },
     // baseOnLayerChange: L.Control.Layers.prototype._onLayerChange,
     // _onLayerChange: function (e) {

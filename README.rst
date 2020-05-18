@@ -41,7 +41,7 @@ especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the 
 
 .. code:: shell
 
-   $ jupyter labextension install plotlywidget@4.6.0 jupyterlab-plotly@4.6.0
+   $ jupyter labextension install plotlywidget jupyterlab-plotly
    $ jupyter labextension install @jupyter-widgets/jupyterlab-manager @jupyter-widgets/jupyterlab-sidecar
 
 

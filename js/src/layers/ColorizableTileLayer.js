@@ -115,6 +115,7 @@ L.ColorizableUtils = {
 L.TileLayer.Colorizable = L.TileLayer.extend({
 
     options: {
+        base: true,
 	colormap: "planck",
 	valueMin: -500,
 	valueMax: +500,
@@ -128,8 +129,6 @@ L.TileLayer.Colorizable = L.TileLayer.extend({
     initialize: function (url, opts) {
 	L.TileLayer.prototype.initialize.call(this, url, opts);
 	this.cache = null;
-        //     this._map.fire("recolor");
-        // console.log("Fire recolor initialize");
     },
 
     setColors: function (opts) {

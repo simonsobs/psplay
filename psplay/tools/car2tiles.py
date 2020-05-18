@@ -15,6 +15,7 @@ def car2tiles(
     output_dir=None,
     delete_fits=True,
     use_webplot=True,
+    pre_operation=None,
 ):
     """ Convert CAR map to PNG tiles
     Parameters
@@ -67,6 +68,12 @@ def car2tiles(
             input_file += ".tmp"
             car.write_map(input_file)
 
+        if pre_operation is not None:
+            car = so_map.read_map(input_file)
+            car.data = eval(pre_operation, {"m": car.data}, np.__dict__)
+            input_file += ".tmp"
+            car.write_map(input_file)
+
     if not mpi.disabled:
         comm.barrier()
 
@@ -87,7 +94,7 @@ def car2tiles(
             enplot.write(plot.name, plot)
 
     if comm.rank == 0:
-        if mask_file is not None:
+        if mask_file is not None or pre_operation is not None:
             os.remove(input_file)
 
         if delete_fits:
@@ -128,6 +135,12 @@ def main():
     parser.add_argument(
         "--keep-fits-files", help="keep intermediate FITS files", action="store_true", default=False
     )
+    parser.add_argument(
+        "--op",
+        help="pre operation on the original CAR file. For instance, 'log(abs(m))' would give you a logarithmic map",
+        type=str,
+        default=None,
+    )
     args, enplot_args = parser.parse_known_args()
 
     car2tiles(
@@ -137,6 +150,7 @@ def main():
         output_dir=args.output_dir,
         delete_fits=not args.keep_fits_files,
         use_webplot=not args.use_enplot,
+        pre_operation=args.op,
     )
 
 

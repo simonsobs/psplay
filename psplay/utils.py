@@ -4,7 +4,11 @@ from itertools import product
 import matplotlib.pyplot as plt
 import numpy as np
 
+from pixell import colorize
+
 from . import ps_tools
+
+colorize.mpl_setdefault("planck")
 
 
 def get_tiles(layers):
@@ -170,7 +174,9 @@ def check_beam(app):
 
 def check_window(app):
     npatches = len(app.patches)
-    fig, axes = plt.subplots(npatches // 2 or 1, npatches // 2 or 1)
+    fig, axes = plt.subplots((npatches + 1) // 2, 2)
+    if npatches % 2:
+        fig.delaxes(*axes.flat[npatches:])
     for ipatch, (name, patch) in enumerate(app.patches.items()):
         patch_geometry = build_patch_geometry(patch)
         car_box, window = ps_tools.create_window(
@@ -179,9 +185,8 @@ def check_window(app):
             source_mask=app.masks_info_list.get("source"),
             galactic_mask=app.masks_info_list.get("galactic"),
         )
-        ax = axes if npatches == 1 else axes[ipatch // 2, ipatch % 2]
+        ax = axes.flat[ipatch]
         extent = [car_box[1][1], car_box[0][1], car_box[0][0], car_box[1][0]]
-        print(car_box, extent)
-        ax.imshow(window.data, extent=extent)
-        ax.set_xlabel("RA")
-        ax.set_ylabel("DEC")
+        ax.imshow(window.data[::-1, ::-1], extent=extent, vmin=-1, vmax=+1)
+        ax.set_xlabel("RA [°]")
+        ax.set_ylabel("DEC [°]")

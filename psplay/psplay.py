@@ -225,6 +225,7 @@ class App:
                             buffer.location = geometry["center"]
                         if isinstance(buffer, Polygon):
                             buffer.locations = utils.build_polygon_geometry(patch, change["new"])
+                        patch.update({"buffer_size": change["new"]})
 
             buffer_size.observe(on_buffer_size_change, names="value")
             self.m.add_control(WidgetControl(widget=buffer_size, position="bottomright"))
@@ -329,6 +330,10 @@ class App:
                 self.plot_config.get("export_directory", "/tmp"),
                 "psplay_results_{}.pkl".format(timestamp),
             )
+            # Remove buffer primitives
+            for patch in self.patches.values():
+                if "buffer" in patch:
+                    del patch["buffer"]
             pickle.dump(self.patches, open(export_file, "wb"))
             print("Results exported in '{}'".format(export_file))
 

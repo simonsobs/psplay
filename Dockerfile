@@ -30,8 +30,8 @@ WORKDIR /home/psplay
 RUN python3 -m pip install --user --upgrade pip numpy cython
 RUN python3 -m pip install --user git+https://github.com/xgarrido/psplay.git
 
-RUN jupyter labextension install plotlywidget@4.6.0 jupyterlab-plotly@4.6.0
+RUN jupyter labextension install plotlywidget jupyterlab-plotly
 RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager @jupyter-widgets/jupyterlab-sidecar
 RUN jupyter labextension install jupyter-leaflet jupyter-leaflet-car
 
-CMD ["jupyter", "lab", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
+CMD ["jupyter", "lab", "--port=8888", "--no-browser", "--ip=0.0.0.0"]

@@ -129,6 +129,8 @@ class NPM(Command):
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
+# Remove logo (raw/html)
+readme = "".join(readme.splitlines()[4:])
 
 setup_args = {
     "name": "psplay",
@@ -157,7 +159,9 @@ setup_args = {
     "author": "Simons Observatory Collaboration Power Spectrum Task Force",
     "url": "https://github.com/simonsobs/psplay",
     "long_description": readme,
+    "long_description_content_type": "text/x-rst",
     "keywords": ["CMB", "spectra", "ipython", "jupyter", "widgets", "graphics"],
+    "python_requires": ">=3.5",
     "classifiers": [
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

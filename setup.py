@@ -130,7 +130,7 @@ class NPM(Command):
 with open("README.rst") as readme_file:
     readme = readme_file.read()
 # Remove logo (raw/html)
-readme = "".join(readme.splitlines()[4:])
+readme = "".join(readme.splitlines(keepends=True)[4:])
 
 setup_args = {
     "name": "psplay",

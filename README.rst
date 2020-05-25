@@ -7,8 +7,8 @@ interactive visualization of CMB maps through `Leaflet <leafletjs.com>`_ library
 provides a set of tools based on `pspy <https://github.com/simonsobs/pspy>`_ to compute and to show
 CMB power spectra.
 
-All the specific javascript library developed for ``psplay`` is done by `Sigurd Naess <https://github.com/amaurea>`_.
-The build process and javascript architecture is highly inspired by
+All the specific javascript library developed for ``psplay`` is done by `Sigurd Naess
+<https://github.com/amaurea>`_.  The build process and javascript architecture is highly inspired by
 `ipyleaflet <https://github.com/jupyter-widgets/ipyleaflet>`_ project.
 
 .. image:: https://img.shields.io/pypi/v/psplay.svg?style=flat

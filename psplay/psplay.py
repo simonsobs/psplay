@@ -20,9 +20,6 @@ from .ipyleaflet import (Circle, ColorizableTileLayer, Graticule,
                          allowed_colormaps)
 from .ps_tools import compute_ps
 
-# Default SO attribution for tiles
-so_attribution = '&copy; <a href="https://simonsobservatory.org/">Simons Observatory</a>'
-
 
 # Generate default plotly colormap based on planck colormap
 def generate_default_colorscale(default="planck"):
@@ -57,7 +54,8 @@ class App:
                 self.config = yaml.load(stream, Loader=yaml.FullLoader)
 
         self.map_config = _get_section(self.config, "map")
-        self.plot_config = _get_section(self.config, "plot")
+        self.data_config = _get_section(self.config, "data")
+        self.plot_config = self.config.get("plot", {})
 
         self.m = None
         self.p = None
@@ -233,7 +231,7 @@ class App:
     def _add_compute(self):
         # Store original fits map
         self.maps_info_list = list()
-        for imap in self.plot_config.get("maps", []):
+        for imap in self.data_config.get("maps", []):
             self.maps_info_list.append(
                 dict(
                     id=_get_section(imap, "id"),
@@ -244,7 +242,7 @@ class App:
             )
 
         self.masks_info_list = dict()
-        for imask in self.plot_config.get("masks", []):
+        for imask in self.data_config.get("masks", []):
             mask_info = dict(name=_get_section(imask, "file"))
             apodization = imask.get("apodization")
             if apodization:
@@ -258,7 +256,7 @@ class App:
 
     def _add_theory(self):
         self.theory = None
-        theory_file = self.plot_config.get(
+        theory_file = self.data_config.get(
             "theory_file", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat"
         )
         if os.path.exists(theory_file):
@@ -365,14 +363,14 @@ class App:
         # Config
         self.use_toeplitz = widgets.Checkbox(value=False, description="Use Toeplitz approx.")
         self.bin_size = widgets.IntSlider(
-            value=self.plot_config.get("bin size", 40),
+            value=self.plot_config.get("bin_size", 40),
             min=0,
             max=200,
             step=10,
             description="Bin size",
         )
         config = widgets.HBox([widgets.VBox([self.use_toeplitz])])
-        if not self.plot_config.get("binning_file"):
+        if not self.data_config.get("binning_file"):
             config.children += (widgets.VBox([self.bin_size]),)
         accordion = widgets.Accordion(children=[config], selected_index=None)
         accordion.set_title(0, "Parameters")
@@ -421,9 +419,9 @@ class App:
                     kwargs.update(
                         dict(
                             error_method="master",
-                            binning_file=self.plot_config.get("binning_file"),
+                            binning_file=self.data_config.get("binning_file"),
                             bin_size=self.bin_size.value,
-                            beam_file=self.plot_config.get("beam_file"),
+                            beam_file=self.data_config.get("beam_file"),
                             source_mask=self.masks_info_list.get("source"),
                             galactic_mask=self.masks_info_list.get("galactic"),
                             compute_T_only=self.compute_T_only.value,

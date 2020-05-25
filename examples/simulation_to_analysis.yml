@@ -14,7 +14,7 @@ map:
         tile: files/tiles/split{splits}_IQU_car.fits/{z}/tile_{y}_{x}_{components}.png
         name: CMB simulation - split {splits} - {components}
 
-plot:
+data:
   maps:
     - id: split0
       file: split0_IQU_car.fits

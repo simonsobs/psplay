@@ -10,6 +10,9 @@ from . import ps_tools
 
 colorize.mpl_setdefault("planck")
 
+# Default SO attribution for tiles
+so_attribution = '&copy; <a href="https://simonsobservatory.org/">Simons Observatory</a>'
+
 
 def get_tiles(layers):
     """ Fonction that converts a dictionary into a complete list of tiles """

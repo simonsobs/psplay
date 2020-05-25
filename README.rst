@@ -7,8 +7,8 @@ interactive visualization of CMB maps through `Leaflet <leafletjs.com>`_ library
 provides a set of tools based on `pspy <https://github.com/simonsobs/pspy>`_ to compute and to show
 CMB power spectra.
 
-All the specific javascript library developed for ``psplay`` is done by `Sigurd Naess
-<https://github.com/amaurea>`_. The build process and javascript architecture is highly inspired by
+All the specific javascript library developed for ``psplay`` is done by `Sigurd Naess <https://github.com/amaurea>`_.
+The build process and javascript architecture is highly inspired by
 `ipyleaflet <https://github.com/jupyter-widgets/ipyleaflet>`_ project.
 
 .. image:: https://img.shields.io/pypi/v/psplay.svg?style=flat
@@ -36,8 +36,8 @@ To install, you will need to have or to install ``numpy``. Then, run
 ``psplay`` runs within a Jupyter notebook and we recommend to use JupyterLab to fully enjoy ``psplay``
 
 To enable the extension within Jupyter, you will need to install several JupyterLab extensions
-especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the Jupyter `widgets
-<https://github.com/jupyter-widgets/ipywidgets>`_. For JupyterLab > 2.0.0, you can do
+especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the Jupyter `widgets <https://github.com/jupyter-widgets/ipywidgets>`_.
+For JupyterLab > 2.0.0, you can do
 
 .. code:: shell
 
@@ -45,8 +45,7 @@ especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the 
    $ jupyter labextension install @jupyter-widgets/jupyterlab-manager @jupyter-widgets/jupyterlab-sidecar
 
 
-Finally, you need to install the `jupyter-leaflet-car
-<https://www.npmjs.com/package/jupyter-leaflet-car>`_ extension
+Finally, you need to install the `jupyter-leaflet-car <https://www.npmjs.com/package/jupyter-leaflet-car>`_ extension
 
 .. code:: shell
 

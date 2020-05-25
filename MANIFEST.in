@@ -2,3 +2,5 @@ recursive-include psplay/static *.*
 include jupyter-leaflet-car.json
 include js/*tgz
 include js/package.json
+include versioneer.py
+include psplay/_version.py

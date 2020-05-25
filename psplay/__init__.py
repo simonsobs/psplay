@@ -1,5 +1,8 @@
-from ._version import __version__, version_info  # noqa
+from ._version import get_versions
 from .psplay import App  # noqa
+
+__version__ = get_versions()["version"]
+del get_versions
 
 
 def _jupyter_nbextension_paths():

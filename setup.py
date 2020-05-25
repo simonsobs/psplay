@@ -12,6 +12,8 @@ from setuptools.command.build_py import build_py
 from setuptools.command.egg_info import egg_info
 from setuptools.command.sdist import sdist
 
+import versioneer
+
 here = os.path.dirname(os.path.abspath(__file__))
 node_root = os.path.join(here, "js")
 is_repo = os.path.exists(os.path.join(here, ".git"))
@@ -130,7 +132,7 @@ with open("README.rst") as readme_file:
 
 setup_args = {
     "name": "psplay",
-    "version": "0.0.3",
+    "version": versioneer.get_version(),
     "description": "A Jupyter widget for playing with CAR Leaflet maps",
     "license": "BSD License",
     "include_package_data": True,
@@ -139,7 +141,7 @@ setup_args = {
         "ipywidgets>=7.5.0",
         "traittypes>=0.2.1",
         "ipyleaflet==0.12.4",
-        "pspy>=1.3.1",
+        "pspy>=1.3.2",
         "plotly>=4.6.0",
         "pyyaml",
         "sidecar",

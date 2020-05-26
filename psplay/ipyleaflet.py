@@ -4,12 +4,10 @@
 from traitlets import (Bool, CFloat, CInt, Dict, Enum, Unicode, default,
                        validate)
 
-from ipyleaflet import (Circle, Control, Layer, LayersControl, LocalTileLayer,
-                        allowed_crs)
+from ipyleaflet import Circle, Control, Layer, LayersControl, LocalTileLayer
 
 EXTENSION_VERSION = "^0.0.6"
 
-allowed_crs += ["CAR"]
 allowed_colormaps = ["gray", "planck", "wmap", "hotcold"]
 
 

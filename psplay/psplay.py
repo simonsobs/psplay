@@ -108,7 +108,7 @@ class App:
                 StatusBarControl(),
                 KeyBindingControl(keybindings=default_keybindings),
             ),
-            crs="CAR",
+            crs=dict(name="CAR", custom=False),
             center=(0, 0),
             min_zoom=-5,
             max_zoom=+5,

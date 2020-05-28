@@ -156,3 +156,12 @@ If you are on JupyterLab you also need to run the following in a separate termin
 
 Every time a JavaScript build has terminated you need to refresh the Notebook page in order to load
 the JavaScript code again.
+
+Authors
+-------
+
+* Xavier Garrido
+* Thibaut Louis
+* Sigurd Naess
+
+The code is part of `PSpipe <https://github.com/simonsobs/PSpipe>`_ the Simons Observatory power spectrum pipeline.

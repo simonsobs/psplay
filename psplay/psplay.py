@@ -315,7 +315,7 @@ class App:
         def _clean_patches(_):
             # Clean buffer if any
             for name, patch in self.patches.items():
-                if "buffer" in patch:
+                if "buffer" in patch and patch["buffer"] is not None:
                     self.m.remove_layer(patch["buffer"])
             self.patches.clear()
             self.draw_control.clear()

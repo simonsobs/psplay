@@ -90,7 +90,7 @@ class App:
             min_native_zoom=-5,
             max_native_zoom=0,
             tile_size=675,
-            show_loading=False,
+            show_loading=self.map_config.get("show_loading", True),
         )
         self.tiles, self.keybindings = utils.get_tiles(layers)
         for tile in self.tiles:

@@ -2,6 +2,7 @@
 
 const L = require('../leaflet-car.js');
 const base = require('jupyter-leaflet');
+const Spinner = require('spin.js').Spinner;
 
 L.ColorizableUtils = {
     colormaps: {
@@ -155,6 +156,9 @@ L.TileLayer.Colorizable = L.TileLayer.extend({
 	    otile.complete = true;
 	    this._updateTile(otile);
 	    L.Util.requestAnimFrame(L.bind(done, this, null, otile));
+            if ("spinner" in this) {
+                this.spinner.stop();
+            }
 	    return otile;
 	} else {
 	    var img  = document.createElement("img");
@@ -297,6 +301,28 @@ export class LeafletColorizableTileLayerView extends base.LeafletTileLayerView {
     create_obj() {
         this.obj = L.tileLayerColorizable(this.model.get('url'), this.get_options());
     }
+
+    leaflet_events() {
+        // super.leaflet_events();
+        this.obj.on('loading', event => {
+            this.model.set('loading', true);
+            this.model.save_changes();
+            if (this.model.get('show_loading')) {
+                this.obj.spinner = new Spinner().spin(this.map_view.el);
+            }
+        });
+        this.obj.on('load', event => {
+            this.model.set('loading', false);
+            this.model.save_changes();
+            this.send({
+                event: 'load'
+            });
+            if (this.model.get('show_loading')) {
+                this.obj.spinner.stop();
+            }
+        });
+    }
+
     model_events() {
         super.model_events();
         this.listenTo(

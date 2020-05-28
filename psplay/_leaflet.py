@@ -6,7 +6,7 @@ from traitlets import (Bool, CFloat, CInt, Dict, Enum, Unicode, default,
 
 from ipyleaflet import Circle, Control, Layer, LayersControl, LocalTileLayer
 
-EXTENSION_VERSION = "^0.0.6"
+EXTENSION_VERSION = "^0.0.7"
 
 allowed_colormaps = ["gray", "planck", "wmap", "hotcold"]
 

@@ -15,10 +15,10 @@ from ipyleaflet import (DrawControl, FullScreenControl, Map, MapStyle, Polygon,
                         WidgetControl)
 
 from . import utils
-from .ipyleaflet import (Circle, ColorizableTileLayer, Graticule,
-                         KeyBindingControl, LayersControl, StatusBarControl,
-                         allowed_colormaps)
-from .ps_tools import compute_ps
+from ._leaflet import (Circle, ColorizableTileLayer, Graticule,
+                       KeyBindingControl, LayersControl, StatusBarControl,
+                       allowed_colormaps)
+from .pstools import compute_ps
 
 
 # Generate default plotly colormap based on planck colormap

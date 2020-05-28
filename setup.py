@@ -140,8 +140,6 @@ setup_args = {
     "include_package_data": True,
     "data_files": get_data_files(),
     "install_requires": [
-        "ipywidgets>=7.5.0",
-        "traittypes>=0.2.1",
         "ipyleaflet>=0.13.0",
         "pspy>=1.3.2",
         "plotly>=4.6.0",

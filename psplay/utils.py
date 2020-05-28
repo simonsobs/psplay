@@ -6,7 +6,7 @@ import numpy as np
 
 from pixell import colorize
 
-from . import ps_tools
+from . import pstools
 
 colorize.mpl_setdefault("planck")
 
@@ -182,7 +182,7 @@ def check_window(app):
         fig.delaxes(*axes.flat[npatches:])
     for ipatch, (name, patch) in enumerate(app.patches.items()):
         patch_geometry = build_patch_geometry(patch)
-        car_box, window = ps_tools.create_window(
+        car_box, window = pstools.create_window(
             patch_geometry,
             app.maps_info_list,
             source_mask=app.masks_info_list.get("source"),

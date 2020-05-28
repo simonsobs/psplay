@@ -36,8 +36,9 @@ To install, you will need to have or to install ``numpy``. Then, run
 ``psplay`` runs within a Jupyter notebook and we recommend to use JupyterLab to fully enjoy ``psplay``
 
 To enable the extension within Jupyter, you will need to install several JupyterLab extensions
-especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the Jupyter `widgets <https://github.com/jupyter-widgets/ipywidgets>`_.
-For JupyterLab > 2.0.0, you can do
+especially the Python ``plotly`` `library <https://plotly.com/python>`_ and the Jupyter `widgets
+<https://github.com/jupyter-widgets/ipywidgets>`_. You will also need ``nodejs`` `library
+<https://nodejs.org/en>`_ and its package manager ``npm``. For JupyterLab > 2.0.0, you can do
 
 .. code:: shell
 
@@ -51,6 +52,61 @@ Finally, you need to install the `jupyter-leaflet-car <https://www.npmjs.com/pac
 
    $ jupyter labextension install jupyter-leaflet jupyter-leaflet-car
 
+Using ``docker``
+----------------
+
+Given the number of requirements, you can use a ``docker`` image already made with the needed
+libraries and everything compiled and installed. You should first install `docker
+<https://docs.docker.com/install/>`_ for your operating system.
+
+Then, you can run the ``simonsobs/psplay`` image by doing
+
+.. code:: shell
+
+   $ docker run --rm -p 8888:8888 simonsobs/psplay
+
+After pulling the ``docker`` image, a JupyterLab instance should start. If your web browser does not
+automatically load the web page, you can copy-paste the JupyterLab URL.
+
+You can bind a local directory to make it available within the ``docker`` container with the ``-v``
+flag (see https://docs.docker.com/storage/bind-mounts for more details).
+
+Using at ``NERSC``
+------------------
+
+On NERSC machines, you can install ``psplay`` within a ``conda`` environment but you can also use a
+common installation for Simons Observatory people (*i.e.* people belonging to ``sobs`` group)
+without need to redo the long installation process.
+
+First you need to log to ``cori.nersc.gov`` machines by enabling port forward to your local machine
+
+.. code:: shell
+
+   $ ssh -L 8888:localhost:8888 user@cori.nersc.gov
+
+Everything passing *via* port 8888 in ``NERSC`` will be forward to your local machine and you will
+be able to grab the JupyterLab instance within your local web browser.
+
+Given a successful connection, you must load the latest ``python`` module
+
+.. code:: shell
+
+   $ module load python
+
+and then you can load the ``conda`` environment with the whole software suite for ``psplay``
+
+.. code:: shell
+
+   $ conda activate /global/cscratch1/sd/xgarrido/psplay/env
+
+Finally, you can go into ``/global/cscratch1/sd/xgarrido/psplay/examples`` directory where
+simulation files have been already processed. Then, fire a JupyterLab instance by typing
+
+.. code:: shell
+
+   $ jupyter lab --port 8888 --no-browser minimal_working_example.ipynb
+
+Copy-paste the URL into your local browser and run the Jupyter notebook.
 
 Installation from sources
 -------------------------

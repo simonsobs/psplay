@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y \
         libfftw3-dev                     \
         libgsl-dev                       \
         libchealpix-dev                  \
-        libopenmpi-dev                   \
         python3                          \
         python3-pip                      \
         wget
@@ -28,7 +27,8 @@ ENV PATH "/home/psplay/.local/bin:${PATH}"
 WORKDIR /home/psplay
 
 RUN python3 -m pip install --user --upgrade pip numpy cython
-RUN python3 -m pip install --user git+https://github.com/xgarrido/psplay.git
+RUN python3 -m pip install --user psplay
+RUN python3 -m pip cache purge
 
 RUN jupyter labextension install plotlywidget jupyterlab-plotly
 RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager @jupyter-widgets/jupyterlab-sidecar

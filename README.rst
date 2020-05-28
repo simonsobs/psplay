@@ -98,7 +98,7 @@ and then you can load the ``conda`` environment with the whole software suite fo
 
 .. code:: shell
 
-   $ conda activate /global/cscratch1/sd/xgarrido/psplay/env
+   $ source activate /global/cscratch1/sd/xgarrido/psplay/env
 
 Finally, you can go into ``/global/cscratch1/sd/xgarrido/psplay/examples`` directory where
 simulation files have been already processed. Then, fire a JupyterLab instance by typing

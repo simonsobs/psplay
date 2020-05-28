@@ -437,23 +437,26 @@ class App:
                     spectra, spec_name_list, lb, ps_dict, cov_dict = method.get("results").values()
                     continue
 
-                patch_dict = utils.build_patch_geometry(patch)
-                spectra, spec_name_list, lb, ps_dict, cov_dict = compute_ps(
-                    patch=patch_dict, maps_info_list=self.maps_info_list, **kwargs
-                )
-                method.update(
-                    dict(
-                        config=kwargs,
-                        results={
-                            "spectra": spectra,
-                            "spec_name_list": spec_name_list,
-                            "lb": lb,
-                            "ps": ps_dict,
-                            "cov": cov_dict,
-                        },
+                try:
+                    patch_dict = utils.build_patch_geometry(patch)
+                    spectra, spec_name_list, lb, ps_dict, cov_dict = compute_ps(
+                        patch=patch_dict, maps_info_list=self.maps_info_list, **kwargs
                     )
-                )
-                patch.update({ps_method: method})
+                    method.update(
+                        dict(
+                            config=kwargs,
+                            results={
+                                "spectra": spectra,
+                                "spec_name_list": spec_name_list,
+                                "lb": lb,
+                                "ps": ps_dict,
+                                "cov": cov_dict,
+                            },
+                        )
+                    )
+                    patch.update({ps_method: method})
+                except Exception as e:
+                    print("An error occured during computation of power spectra : ", str(e))
 
             if spectra is not None:
                 if ps_method == "master":

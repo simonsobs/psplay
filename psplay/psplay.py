@@ -73,7 +73,7 @@ class App:
             from sidecar import Sidecar
             from IPython.display import display
 
-            sc = Sidecar(title="CMB map")
+            sc = Sidecar(title=self.map_config.get("title", "CMB map"))
             with sc:
                 display(self.m)
         else:
@@ -85,11 +85,11 @@ class App:
     def _add_layers(self):
         layers = self.map_config.get("layers", {})
         tile_default = dict(
-            min_zoom=-5,
-            max_zoom=+5,
-            min_native_zoom=-5,
-            max_native_zoom=0,
-            tile_size=675,
+            min_zoom=self.map_config.get("min_zoom", -5),
+            max_zoom=self.map_config.get("min_zoom", +5),
+            min_native_zoom=self.map_config.get("min_native_zoom", -5),
+            max_native_zoom=self.map_config.get("max_native_zoom", 0),
+            tile_size=self.map_config.get("tile_size", 675),
             show_loading=self.map_config.get("show_loading", True),
         )
         self.tiles, self.keybindings = utils.get_tiles(layers)
@@ -109,11 +109,11 @@ class App:
                 KeyBindingControl(keybindings=default_keybindings),
             ),
             crs=dict(name="CAR", custom=False),
-            center=(0, 0),
-            min_zoom=-5,
-            max_zoom=+5,
+            center=self.map_config.get("center", (0, 0)),
+            min_zoom=self.map_config.get("min_zoom", -5),
+            max_zoom=self.map_config.get("min_zoom", +5),
+            zoom=self.map_config.get("initial_zoom", 0),
             interpolation="nearest",
-            zoom=0,
             scroll_wheel_zoom=True,
             fade_animation=False,
             world_copy_jump=True,
@@ -353,6 +353,49 @@ class App:
         self.fig_1d = go.FigureWidget(
             layout=go.Layout(height=600, template=plotly_config.get("template", "plotly_white"))
         )
+        updatemenus = list(
+            [
+                dict(
+                    active=0,
+                    type="buttons",
+                    buttons=list(
+                        [
+                            dict(
+                                label="Linear Scale",
+                                method="update",
+                                args=[{"visible": [True] * 100}, {"yaxis": {"type": "linear"}},],
+                            ),
+                            dict(
+                                label="Log Scale",
+                                method="update",
+                                args=[{"visible": [True] * 100}, {"yaxis": {"type": "log"}},],
+                            ),
+                        ]
+                    ),
+                    direction="right",
+                    pad={"r": 10, "t": 10},
+                    showactive=True,
+                    x=1.0,
+                    xanchor="right",
+                    y=1.1,
+                    yanchor="top",
+                )
+            ]
+        )
+        layout = dict(
+            updatemenus=updatemenus,
+            autosize=True,
+            # title=split_name,
+            xaxis_title=r"$\ell$",
+            # yaxis_title=yaxis_title,
+        )
+        try:
+            self.fig_1d.update_layout(layout)
+        except ValueError:
+            # Do not know what's going on : an exception is raised by the graphical
+            # representation works well so skip it for the time being
+            print("Exception raised from 'update_layout'")
+            pass
 
         # Header
         allowed_spectra = ["TT", "TE", "TB", "ET", "BT", "EE", "EB", "BE", "BB"]
@@ -384,6 +427,37 @@ class App:
         self.fig_2d = go.FigureWidget(
             layout=go.Layout(height=600, template=plotly_config.get("template", "plotly_white"))
         )
+        updatemenus = list(
+            [
+                dict(
+                    active=0,
+                    buttons=list(
+                        [
+                            dict(label="2D", method="restyle", args=["type", "heatmap"],),
+                            dict(label="3D", method="restyle", args=["type", "surface"],),
+                        ]
+                    ),
+                    direction="down",
+                    pad={"r": 10, "t": 10},
+                    showactive=True,
+                    x=1.0,
+                    xanchor="right",
+                    y=1.15,
+                    yanchor="top",
+                )
+            ]
+        )
+        layout = dict(
+            updatemenus=updatemenus,
+            # sliders=sliders,
+            autosize=True,
+            # width=self.fig_2d.layout.height,
+            xaxis=dict(title=r"$\ell_X$", showgrid=False, zeroline=False, constrain="domain",),
+            yaxis=dict(
+                title=r"$\ell_Y$", scaleanchor="x", scaleratio=1, showgrid=False, zeroline=False,
+            ),
+        )
+        self.fig_2d.update_layout(layout)
 
         # Header
         allowed_spectra = ["II", "IQ", "IU", "QI", "QQ", "QU", "UI", "UQ", "UU"]
@@ -467,14 +541,15 @@ class App:
                     self.split_2d.options = spec_name_list
 
         if spectra is not None:
-            self.spectra_1d.observe(self._update_plot, names="value")
-            self.split_1d.observe(self._update_plot, names="value")
-            self.spectra_2d.observe(self._update_plot, names="value")
-            self.split_2d.observe(self._update_plot, names="value")
+            self.spectra_1d.observe(self._update_1d_plot, names="value")
+            self.split_1d.observe(self._update_1d_plot, names="value")
+            self.spectra_2d.observe(self._update_2d_plot, names="value")
+            self.split_2d.observe(self._update_2d_plot, names="value")
             self.patch_2d.options = self.patches.keys()
-            self.patch_2d.observe(self._update_plot, names="value")
+            self.patch_2d.observe(self._update_2d_plot, names="value")
 
-            self._update_plot(None)
+            self._update_1d_plot(None, create=True)
+            self._update_2d_plot(None, create=True)
 
         self.compute_button.description = "Compute spectra"
         self.compute_button.icon = "check"
@@ -482,20 +557,16 @@ class App:
         self.clean_button.disabled = False
         self.export_button.disabled = False
 
-    def _update_plot(self, _):
-        if self.compute_1d.value:
-            self._update_1d_plot()
-        if self.compute_2d.value:
-            self._update_2d_plot()
-
-    def _update_1d_plot(self):
+    def _update_1d_plot(self, _, create=False):
         split_name = self.split_1d.value
         spec = self.spectra_1d.value
 
-        # Clean data
-        self.fig_1d.data = []
+        if create:
+            # Clean data
+            self.fig_1d.data = []
 
         # Update theory & data
+        ipatch = 0
         for name, patch in self.patches.items():
             method = patch.get("master", dict())
             results = method.get("results")
@@ -506,81 +577,43 @@ class App:
             x = results.get("lb")
             y = results.get("ps").get(split_name).get(spec)
             yerr = np.sqrt(np.diag(results.get("cov").get(split_name).get(spec)))
-            self.fig_1d.add_scatter(
-                name=name,
-                x=x,
-                y=y,
-                error_y=dict(type="data", array=yerr, visible=True, color=color),
-                mode="markers",
-                marker=dict(color=color),
-            )
-        if self.theory is not None:
-            self.fig_1d.add_scatter(
-                name="theory",
-                x=self.theory.get("lth")[: self.lmax.value],
-                y=self.theory.get("clth")[self.spectra_1d.value][: self.lmax.value],
-                mode="lines",
-                line=dict(color="gray"),
-            )
-
-        yaxis_title = r"$D_\ell^\mathrm{%s}$" % spec
-        updatemenus = list(
-            [
-                dict(
-                    active=0,
-                    type="buttons",
-                    buttons=list(
-                        [
-                            dict(
-                                label="Linear Scale",
-                                method="update",
-                                args=[
-                                    {"visible": [True] * len(self.fig_1d.data)},
-                                    {"yaxis": {"title": yaxis_title, "type": "linear"}},
-                                ],
-                            ),
-                            dict(
-                                label="Log Scale",
-                                method="update",
-                                args=[
-                                    {"visible": [True] * len(self.fig_1d.data)},
-                                    {"yaxis": {"title": yaxis_title, "type": "log"}},
-                                ],
-                            ),
-                        ]
-                    ),
-                    direction="right",
-                    pad={"r": 10, "t": 10},
-                    showactive=True,
-                    x=1.0,
-                    xanchor="right",
-                    y=1.1,
-                    yanchor="top",
+            if create:
+                self.fig_1d.add_scatter(
+                    name=name,
+                    x=x,
+                    y=y,
+                    error_y=dict(type="data", array=yerr, visible=True, color=color),
+                    mode="markers",
+                    marker=dict(color=color),
                 )
-            ]
-        )
-        layout = dict(
-            updatemenus=updatemenus,
-            autosize=True,
-            title=split_name,
-            xaxis_title=r"$\ell$",
-            yaxis_title=yaxis_title,
-        )
-        try:
-            self.fig_1d.update_layout(layout)
-        except ValueError:
-            # Do not know what's going on : an exception is raised by the graphical
-            # representation works well so skip it for the time being
-            print("Exception raised from 'update_layout'")
-            pass
+            else:
+                with self.fig_1d.batch_update():
+                    self.fig_1d.data[ipatch].x = x
+                    self.fig_1d.data[ipatch].y = y
+                    self.fig_1d.data[ipatch].error_y.array = yerr
+                ipatch += 1
 
-    def _update_2d_plot(self):
+        if self.theory is not None:
+            x = self.theory.get("lth")[: self.lmax.value]
+            y = self.theory.get("clth")[self.spectra_1d.value][: self.lmax.value]
+            if create:
+                self.fig_1d.add_scatter(
+                    name="theory", x=x, y=y, mode="lines", line=dict(color="gray"),
+                )
+            else:
+                with self.fig_1d.batch_update():
+                    self.fig_1d.data[-1].x = x
+                    self.fig_1d.data[-1].y = y
+
+        with self.fig_1d.batch_update():
+            self.fig_1d.layout.title = split_name
+            self.fig_1d.layout.yaxis.title = r"$D_\ell^\mathrm{%s}$" % spec
+
+    def _update_2d_plot(self, _, create=False):
         split_name = self.split_2d.value
         spec = self.spectra_2d.value
         patch_name = self.patch_2d.value
-        method = self.patches[patch_name].get("2dflat")
-        if not method:
-            return
+        method = self.patches[patch_name].get("2dflat", dict())
         results = method.get("results")
         if not results:
             return
@@ -589,10 +622,6 @@ class App:
         shape = powermap.shape
         x = np.linspace(np.min(p2d.lx), np.max(p2d.lx), shape[1])
         y = np.linspace(np.min(p2d.ly), np.max(p2d.ly), shape[0])
-
-        # Clean data
-        self.fig_2d.data = []
-        self.fig_2d.add_heatmap(x=x, y=y, z=powermap, colorscale=default_colorscale)
 
         # Create slider and buttons
         zmin, zmax = np.min(powermap), np.max(powermap)
@@ -608,7 +637,6 @@ class App:
                 ],
             )
             steps.append(step)
-
         sliders = [
             dict(
                 len=0.5,
@@ -619,51 +647,25 @@ class App:
                 steps=steps,
             )
         ]
-        updatemenus = list(
-            [
-                dict(
-                    active=0,
-                    buttons=list(
-                        [
-                            dict(label="2D", method="restyle", args=["type", "heatmap"],),
-                            dict(label="3D", method="restyle", args=["type", "surface"],),
-                        ]
-                    ),
-                    direction="down",
-                    pad={"r": 10, "t": 10},
-                    showactive=True,
-                    x=1.0,
-                    xanchor="right",
-                    y=1.15,
-                    yanchor="top",
-                )
-            ]
-        )
-        layout = dict(
-            updatemenus=updatemenus,
-            sliders=sliders,
-            autosize=True,
-            # width=self.fig_2d.layout.height,
-            title=dict(
-                text="{} - {}".format(split_name, patch_name),
-                font=dict(
-                    color=self.patches[patch_name].get("properties").get("style").get("color")
-                ),
-            ),
-            xaxis=dict(
-                title=r"$\ell_X$",
-                showgrid=False,
-                zeroline=False,
-                range=[-self.lmax.value, +self.lmax.value],
-                constrain="domain",
-            ),
-            yaxis=dict(
-                title=r"$\ell_Y$",
-                scaleanchor="x",
-                scaleratio=1,
-                showgrid=False,
-                zeroline=False,
-                range=[-self.lmax.value, +self.lmax.value],
-            ),
-        )
-        self.fig_2d.update_layout(layout)
+
+        if create:
+            # Clean data
+            self.fig_2d.data = []
+            self.fig_2d.add_heatmap(x=x, y=y, z=powermap, colorscale=default_colorscale)
+        else:
+            with self.fig_2d.batch_update():
+                self.fig_2d.data[0].x = x
+                self.fig_2d.data[0].y = y
+                self.fig_2d.data[0].z = powermap
+                self.fig_2d.data[0].zmin = zmin
+                self.fig_2d.data[0].zmax = zmax
+
+        with self.fig_2d.batch_update():
+            self.fig_2d.layout.sliders = sliders
+            self.fig_2d.layout.title.text = "{} - {}".format(split_name, patch_name)
+            self.fig_2d.layout.title.font.color = (
+                self.patches[patch_name].get("properties").get("style").get("color")
+            )
+            self.fig_2d.layout.xaxis.range = [-self.lmax.value, +self.lmax.value]
+            self.fig_2d.layout.yaxis.range = [-self.lmax.value, +self.lmax.value]
+        self.fig_2d.update_traces()

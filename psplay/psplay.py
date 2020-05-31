@@ -86,7 +86,7 @@ class App:
         layers = self.map_config.get("layers", {})
         tile_default = dict(
             min_zoom=self.map_config.get("min_zoom", -5),
-            max_zoom=self.map_config.get("min_zoom", +5),
+            max_zoom=self.map_config.get("max_zoom", +5),
             min_native_zoom=self.map_config.get("min_native_zoom", -5),
             max_native_zoom=self.map_config.get("max_native_zoom", 0),
             tile_size=self.map_config.get("tile_size", 675),
@@ -111,7 +111,7 @@ class App:
             crs=dict(name="CAR", custom=False),
             center=self.map_config.get("center", (0, 0)),
             min_zoom=self.map_config.get("min_zoom", -5),
-            max_zoom=self.map_config.get("min_zoom", +5),
+            max_zoom=self.map_config.get("max_zoom", +5),
             zoom=self.map_config.get("initial_zoom", 0),
             interpolation="nearest",
             scroll_wheel_zoom=True,

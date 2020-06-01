@@ -278,8 +278,12 @@ class App:
 
         # General configuration
         layout = widgets.Layout(width="auto", height="auto")
-        self.compute_1d = widgets.Checkbox(value=True, description="1D spectra", layout=layout)
-        self.compute_2d = widgets.Checkbox(value=True, description="2D spectra", layout=layout)
+        self.compute_1d = widgets.Checkbox(
+            value=self.plot_config.get("compute_1d", True), description="1D spectra", layout=layout
+        )
+        self.compute_2d = widgets.Checkbox(
+            value=self.plot_config.get("compute_2d", True), description="2D spectra", layout=layout
+        )
         self.compute_T_only = widgets.Checkbox(
             value=False, description="Only temperature", layout=layout
         )

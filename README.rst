@@ -112,6 +112,9 @@ into ``Leaflet`` tiles. Then, fire a JupyterLab instance by typing
 
 Copy-paste the URL into your local browser and run the Jupyter notebook.
 
+If port 8888 is already in use, JupyterLab will try another one and then breaks the port forward. In
+this case you should restart the ssh session with another port.
+
 Installation from sources
 -------------------------
 

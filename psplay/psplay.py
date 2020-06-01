@@ -386,20 +386,8 @@ class App:
                 )
             ]
         )
-        layout = dict(
-            updatemenus=updatemenus,
-            autosize=True,
-            # title=split_name,
-            xaxis_title=r"$\ell$",
-            # yaxis_title=yaxis_title,
-        )
-        try:
-            self.fig_1d.update_layout(layout)
-        except ValueError:
-            # Do not know what's going on : an exception is raised by the graphical
-            # representation works well so skip it for the time being
-            print("Exception raised from 'update_layout'")
-            pass
+        layout = dict(updatemenus=updatemenus, autosize=True, xaxis_title=r"$\ell$")
+        self.fig_1d.update_layout(layout)
 
         # Header
         allowed_spectra = ["TT", "TE", "TB", "ET", "BT", "EE", "EB", "BE", "BB"]

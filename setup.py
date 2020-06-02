@@ -32,6 +32,7 @@ def js_prerelease(command, strict=False):
 
     class DecoratedCommand(command):
         def run(self):
+            self.distribution.metadata.version = versioneer.get_version()
             jsdeps = self.distribution.get_command_obj("jsdeps")
             if not is_repo and all(os.path.exists(t) for t in jsdeps.targets):
                 # sdist, nothing to do
@@ -52,6 +53,15 @@ def js_prerelease(command, strict=False):
                     log.warn(str(e))
             command.run(self)
             update_package_data(self.distribution)
+
+        # From versioneer
+        def make_release_tree(self, base_dir, files):
+            root = versioneer.get_root()
+            cfg = versioneer.get_config_from_root(root)
+            command.make_release_tree(self, base_dir, files)
+            target_versionfile = os.path.join(base_dir, cfg.versionfile_source)
+            print("Updating %s" % target_versionfile)
+            versioneer.write_to_version_file(target_versionfile, versioneer.get_versions())
 
     return DecoratedCommand
 

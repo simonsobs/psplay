@@ -367,12 +367,12 @@ class App:
                             dict(
                                 label="Linear Scale",
                                 method="update",
-                                args=[{"visible": [True] * 100}, {"yaxis": {"type": "linear"}},],
+                                args=[{"visible": [True] * 100}, {"yaxis": {"type": "linear"}}],
                             ),
                             dict(
                                 label="Log Scale",
                                 method="update",
-                                args=[{"visible": [True] * 100}, {"yaxis": {"type": "log"}},],
+                                args=[{"visible": [True] * 100}, {"yaxis": {"type": "log"}}],
                             ),
                         ]
                     ),

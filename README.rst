@@ -85,7 +85,7 @@ First you need to log to ``cori.nersc.gov`` machines by enabling port forward to
 
    $ ssh -L 8888:localhost:8888 user@cori.nersc.gov
 
-Everything passing *via* port 8888 in ``NERSC`` will be forward to your local machine and you will
+Everything passing *via* port 8888 in ``NERSC`` will be forwarded to your local machine and you will
 be able to grab the JupyterLab instance within your local web browser.
 
 Given a successful connection, you must load the latest ``python`` module

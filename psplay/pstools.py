@@ -97,7 +97,7 @@ def create_window(
         apo_type_survey = "C1"
 
     if galactic_mask is not None:
-        gal_mask = so_map.read_map(galactic_mask, car_box=car_box)
+        gal_mask = so_map.read_map(galactic_mask["name"], car_box=car_box)
         window.data *= gal_mask.data
         del gal_mask
 
@@ -524,6 +524,13 @@ def compute_ps(
     lmax : integer
       the maximum multipole to consider for the spectra computation
     """
+
+    # Check computation mode
+    for map_info in maps_info_list:
+        if not compute_T_only and map_info["data_type"] == "I":
+            raise ValueError(
+                "Only temperature computation can be done given data type! Check your configuration."
+            )
 
     # Check file path
     if binning_file is not None:

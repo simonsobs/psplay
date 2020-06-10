@@ -108,7 +108,7 @@ L.Map.include({
                 var overlays = [];
                 for (var key in layers) {
                     var layer = layers[key];
-                    if (layer.options && "base" in layer.options && !(layer.options.base)) {
+                    if (layer.options && "tagId" in layer.options && "base" in layer.options && !(layer.options.base)) {
                         overlays.push(layer);
                     }
                 }

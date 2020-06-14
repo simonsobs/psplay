@@ -100,14 +100,14 @@ and then you can load the ``conda`` environment with the whole software suite fo
 
    $ source activate /global/cscratch1/sd/xgarrido/psplay/env
 
-Finally, you can copy the ``/global/cscratch1/sd/xgarrido/psplay/examples`` directory to your home
-or scratch directory. For example purpose, this directory holds simulation files already converted
-into ``Leaflet`` tiles. Then, fire a JupyterLab instance by typing
+Finally, you can copy the ``/global/cscratch1/sd/xgarrido/psplay/examples/minimal`` directory to
+your home or scratch directory. For example purpose, this directory holds simulation files already
+converted into ``Leaflet`` tiles. Then, fire a JupyterLab instance by typing
 
 .. code:: shell
 
    $ cd /your/owned/directory
-   $ cp -r /global/cscratch1/sd/xgarrido/psplay/examples .
+   $ cp -r /global/cscratch1/sd/xgarrido/psplay/examples/minimal .
    $ jupyter lab --port 8888 --no-browser minimal_working_example.ipynb
 
 Copy-paste the URL into your local browser and run the Jupyter notebook.

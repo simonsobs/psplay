@@ -8,16 +8,13 @@ from copy import deepcopy
 
 import ipywidgets as widgets
 import numpy as np
-import yaml
-
 import plotly.graph_objects as go
-from ipyleaflet import (DrawControl, FullScreenControl, Map, MapStyle, Polygon,
-                        WidgetControl)
+import yaml
+from ipyleaflet import DrawControl, FullScreenControl, Map, MapStyle, Polygon, WidgetControl
 
 from . import utils
-from ._leaflet import (Circle, ColorizableTileLayer, Graticule,
-                       KeyBindingControl, LayersControl, StatusBarControl,
-                       allowed_colormaps)
+from ._leaflet import (Circle, ColorizableTileLayer, Graticule, KeyBindingControl, LayersControl,
+                       StatusBarControl, allowed_colormaps)
 from .pstools import compute_ps
 
 
@@ -70,8 +67,8 @@ class App:
 
     def show_map(self):
         if self.map_config.get("use_sidecar", True):
-            from sidecar import Sidecar
             from IPython.display import display
+            from sidecar import Sidecar
 
             sc = Sidecar(title=self.map_config.get("title", "CMB map"))
             with sc:
@@ -178,7 +175,9 @@ class App:
 
         if widgets_config.get("use_cmap_control", False):
             cmap = widgets.RadioButtons(
-                options=allowed_colormaps, value="planck", layout=widgets.Layout(width="100px"),
+                options=allowed_colormaps,
+                value="planck",
+                layout=widgets.Layout(width="100px"),
             )
 
             def on_cmap_change(change):
@@ -256,18 +255,22 @@ class App:
 
     def _add_theory(self):
         self.theory = None
-        theory_file = self.data_config.get(
-            "theory_file", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat"
+        theory = self.data_config.get("theory", {})
+        theory_file = theory.get("file", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat")
+        if not os.path.exists(theory_file):
+            return
+        clth = {}
+        lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
+            theory_file,
+            unpack=True,
         )
-        if os.path.exists(theory_file):
-            clth = {}
-            lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
-                theory_file, unpack=True,
-            )
-            clth["ET"] = clth["TE"]
-            for spec in ["EB", "BE", "BT", "TB"]:
-                clth[spec] = np.zeros(clth["TE"].shape)
-            self.theory = {"lth": lth, "clth": clth}
+        clth["ET"] = clth["TE"]
+        for spec in ["EB", "BE", "BT", "TB"]:
+            clth[spec] = np.zeros(clth["TE"].shape)
+        for spec in list(clth.keys()):
+            if spec not in theory.get("allow", ["TT"]):
+                del clth[spec]
+        self.theory = {"lth": lth, "clth": clth}
 
     def _add_plot(self):
         # Main
@@ -425,8 +428,16 @@ class App:
                     active=0,
                     buttons=list(
                         [
-                            dict(label="2D", method="restyle", args=["type", "heatmap"],),
-                            dict(label="3D", method="restyle", args=["type", "surface"],),
+                            dict(
+                                label="2D",
+                                method="restyle",
+                                args=["type", "heatmap"],
+                            ),
+                            dict(
+                                label="3D",
+                                method="restyle",
+                                args=["type", "surface"],
+                            ),
                         ]
                     ),
                     direction="down",
@@ -444,9 +455,18 @@ class App:
             # sliders=sliders,
             autosize=True,
             # width=self.fig_2d.layout.height,
-            xaxis=dict(title=r"$\ell_X$", showgrid=False, zeroline=False, constrain="domain",),
+            xaxis=dict(
+                title=r"$\ell_X$",
+                showgrid=False,
+                zeroline=False,
+                constrain="domain",
+            ),
             yaxis=dict(
-                title=r"$\ell_Y$", scaleanchor="x", scaleratio=1, showgrid=False, zeroline=False,
+                title=r"$\ell_Y$",
+                scaleanchor="x",
+                scaleratio=1,
+                showgrid=False,
+                zeroline=False,
             ),
         )
         self.fig_2d.update_layout(layout)
@@ -480,7 +500,10 @@ class App:
             for ipatch, (name, patch) in enumerate(self.patches.items()):
                 print("Compute patch #{} for '{}' method".format(ipatch, ps_method))
 
-                kwargs = dict(ps_method=ps_method, lmax=self.lmax.value,)
+                kwargs = dict(
+                    ps_method=ps_method,
+                    lmax=self.lmax.value,
+                )
                 if ps_method == "master":
                     kwargs.update(
                         dict(
@@ -586,11 +609,18 @@ class App:
                 ipatch += 1
 
         if self.theory is not None:
-            x = self.theory.get("lth")[: self.lmax.value]
-            y = self.theory.get("clth")[self.spectra_1d.value][: self.lmax.value]
+            x = []
+            y = []
+            if spec in self.theory.get("clth"):
+                x = self.theory.get("lth")[: self.lmax.value]
+                y = self.theory.get("clth")[spec][: self.lmax.value]
             if create:
                 self.fig_1d.add_scatter(
-                    name="theory", x=x, y=y, mode="lines", line=dict(color="gray"),
+                    name="theory",
+                    x=x,
+                    y=y,
+                    mode="lines",
+                    line=dict(color="gray"),
                 )
             else:
                 with self.fig_1d.batch_update():
@@ -624,7 +654,10 @@ class App:
                 method="restyle",
                 args=[
                     dict(
-                        zmin=scale * zmin, zmax=scale * zmax, cmin=scale * zmin, cmax=scale * zmax,
+                        zmin=scale * zmin,
+                        zmax=scale * zmax,
+                        cmin=scale * zmin,
+                        cmax=scale * zmax,
                     )
                 ],
             )

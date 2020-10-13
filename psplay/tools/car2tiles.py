@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-
 from pixell import enplot, mpi
 from pspy import so_map
 
@@ -17,7 +16,7 @@ def car2tiles(
     use_webplot=True,
     pre_operation=None,
 ):
-    """ Convert CAR map to PNG tiles
+    """Convert CAR map to PNG tiles
     Parameters
     ----------
     input_file: fits file
@@ -38,7 +37,7 @@ def car2tiles(
     comm = mpi.COMM_WORLD
     if comm.rank == 0:
         if output_dir is None:
-            output_dir = os.path.join("tiles", input_file)
+            output_dir = os.path.join("tiles", os.path.basename(input_file))
         # Check if path to fits file are already stored
         fits_files = os.path.join(output_dir, "*/*.fits")
         if fits_files not in enplot_args:

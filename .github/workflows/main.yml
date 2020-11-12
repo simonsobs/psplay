@@ -43,7 +43,7 @@ jobs:
       run: |
         mamba install python=${{ matrix.python-version }} pip nodejs ipywidgets jupyter jupyterlab flake8 numpy cython
 
-    - name: Install ipyleaflet
+    - name: Install psplay
       shell: bash -l {0}
       run: pip install .
 
@@ -55,9 +55,9 @@ jobs:
     - name: Check installation files
       shell: bash -l {0}
       run: |
-        test -d $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet
-        test -f $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet/extension.js
-        test -f $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet/index.js
+        test -d $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet-car
+        test -f $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet-car/extension.js
+        test -f $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet-car/index.js
 
     - name: Flake8 check
       shell: bash -l {0}

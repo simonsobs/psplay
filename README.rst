@@ -16,8 +16,8 @@ All the specific javascript library developed for ``psplay`` is done by `Sigurd 
    :target: https://pypi.python.org/pypi/psplay/
 .. image:: https://img.shields.io/npm/v/jupyter-leaflet-car
    :target: https://www.npmjs.com/package/jupyter-leaflet-car
-.. image:: https://travis-ci.com/simonsobs/psplay.svg?branch=master
-   :target: https://travis-ci.com/simonsobs/psplay
+.. image:: https://img.shields.io/github/workflow/status/simonsobs/psplay/Tests/master
+   :target: https://github.com/simonsobs/psplay/actions
 
 Examples
 --------

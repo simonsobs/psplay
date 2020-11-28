@@ -3,11 +3,9 @@ import time
 from copy import deepcopy
 
 import numpy as np
-from scipy.ndimage.morphology import distance_transform_edt
-
 from pixell import enmap
-from pspy import (flat_tools, pspy_utils, so_cov, so_map, so_mcm, so_spectra,
-                  so_window, sph_tools)
+from pspy import flat_tools, pspy_utils, so_cov, so_map, so_mcm, so_spectra, so_window, sph_tools
+from scipy.ndimage.morphology import distance_transform_edt
 
 
 class Timer:
@@ -34,6 +32,7 @@ def create_window(
     source_mask=None,
     compute_T_only=False,
     use_rmax=True,
+    use_kspace_filter=False,
 ):
     """Create a window function for a patch
 
@@ -60,6 +59,8 @@ def create_window(
       only use temperature field
     use_rmax: boolean
       apply apodization up to the apodization radius
+    use_kspace_filter: boolean
+      create a binary mask to be only used when applying kspace filter to maps
     """
     timer.start("Create window...")
 
@@ -114,12 +115,17 @@ def create_window(
             for i in range(split.ncomp):
                 window.data[split.data[i] == 0] = 0.0
 
+    # Binary mask for kspace filter
+    binary = window.copy() if use_kspace_filter else None
+
     window = so_window.create_apodization(
         window, apo_type=apo_type_survey, apo_radius_degree=apo_radius_survey, use_rmax=use_rmax
     )
 
     if source_mask is not None:
         ps_mask = so_map.read_map(source_mask["name"], car_box=car_box)
+        if use_kspace_filter:
+            binary.data *= ps_mask.data
         ps_mask = so_window.create_apodization(
             ps_mask, apo_type=source_mask["apo_type"], apo_radius_degree=source_mask["apo_radius"]
         )
@@ -127,7 +133,7 @@ def create_window(
         del ps_mask
 
     timer.stop()
-    return car_box, window
+    return car_box, window, binary
 
 
 def compute_mode_coupling(
@@ -230,6 +236,56 @@ def compute_mode_coupling(
     return mbb_inv
 
 
+def get_filtered_map(map, binary, vk_mask, hk_mask, normalize=False):
+    """Filter the map in Fourier space removing modes in a horizontal and vertical band
+    defined by hk_mask and vk_mask. Note that we mutliply the maps by a binary mask before
+    doing this operation in order to remove pathological pixels
+
+    Parameters
+    ---------
+    orig_map: ``so_map``
+        the map to be filtered
+    binary:  ``so_map``
+        a binary mask removing pathological pixels
+    vk_mask: list with 2 elements
+        format is fourier modes [-lx,+lx]
+    hk_mask: list with 2 elements
+        format is fourier modes [-ly,+ly]
+    """
+
+    if map.ncomp == 1:
+        map.data *= binary.data
+    else:
+        map.data[:] *= binary.data
+
+    lymap, lxmap = map.data.lmap()
+    ly, lx = lymap[:, 0], lxmap[0, :]
+
+    # filtered_map = map.copy()
+    ft = enmap.fft(map.data, normalize=normalize)
+
+    if vk_mask is not None:
+        id_vk = np.where((lx > vk_mask[0]) & (lx < vk_mask[1]))
+    if hk_mask is not None:
+        id_hk = np.where((ly > hk_mask[0]) & (ly < hk_mask[1]))
+
+    if map.ncomp == 1:
+        if vk_mask is not None:
+            ft[:, id_vk] = 0.0
+        if hk_mask is not None:
+            ft[id_hk, :] = 0.0
+
+    if map.ncomp == 3:
+        if vk_mask is not None:
+            ft[:, :, id_vk] = 0.0
+        if hk_mask is not None:
+            ft[:, id_hk, :] = 0.0
+
+    map.data[:] = np.real(enmap.ifft(ft, normalize=normalize))
+
+    return map
+
+
 def get_spectra(
     window,
     maps_info_list,
@@ -240,6 +296,10 @@ def get_spectra(
     ps_method="master",
     mbb_inv=None,
     compute_T_only=False,
+    vk_mask=None,
+    hk_mask=None,
+    transfer_function=None,
+    binary=None,
 ):
     """Compute the power spectra in the patch
 
@@ -267,7 +327,14 @@ def get_spectra(
       the inverse mode coupling matrix, not in use for 2dflat
     compute_T_only: boolean
         True to compute only T spectra
-
+    vk_mask: list
+      the vertical band to filter out from 2D FFT (format is [-lx, +lx])
+    hk_mask: list
+      the horizontal band to filter out from 2D FFT (format is [-ly, +ly])
+    transfer_function: str
+      the path to the transfer function
+    binary: so_map
+      the binary mask to be used in the kspace filter process
     """
 
     ht_list = []
@@ -287,9 +354,17 @@ def get_spectra(
         if map_info["cal"] is not None:
             split.data *= map_info["cal"]
 
+        use_kspace_filter = vk_mask is not None or hk_mask is not None
+        if use_kspace_filter:
+            timer.start("Filter {} in the patch...".format(os.path.basename(map_info["name"])))
+            split = get_filtered_map(split, binary, vk_mask, hk_mask)
+            timer.stop()
+
         if ps_method in ["master", "pseudo"]:
             timer.start("SPHT of {} in the patch...".format(os.path.basename(map_info["name"])))
             alms = sph_tools.get_alms(split, window, niter=0, lmax=lmax + 50)
+            if use_kspace_filter:
+                alms /= split.data.shape[1] * split.data.shape[2]
             ht_list += [alms]
             timer.stop()
 
@@ -329,6 +404,10 @@ def get_spectra(
                 ells, ps_dict[spec_name] = so_spectra.bin_spectra(
                     l, ps, binning_file, lmax, type=type, mbb_inv=mbb_inv, spectra=spectra
                 )
+                if use_kspace_filter:
+                    _, _, tf, _ = np.loadtxt(transfer_function, unpack=True)
+                    for spec in spectra:
+                        ps_dict[spec_name][spec] /= tf[np.where(ells < lmax)]
 
             elif ps_method == "2dflat":
                 ells, ps_dict[spec_name] = flat_tools.power_from_fft(ht1, ht2, type=type)
@@ -358,34 +437,36 @@ def get_covariance(
     l_toep=None,
     mbb_inv=None,
     compute_T_only=False,
+    transfer_function=None,
 ):
     """Compute the covariance matrix of the power spectrum in the patch
 
-    Parameters
-    ----------
+     Parameters
+     ----------
 
-    window: so_map
-      the window function of the patch
-    lmax: integer
-      the maximum multipole to consider for the spectra computation
-    spec_name_list:  list
-      the list of  power spectra
-      For example : [split0xsplit0,split0xsplit1,split1xsplit1]
-      note that for computing the error on PS(split0xsplit1) we need PS(split0xsplit0), PS(split0xsplit1), PS(split1xsplit1)
-    ps_dict: dict
-      a dict containing all power spectra
-    binning_file: text file
-      a binning file with three columns bin low, bin high, bin mean
-      note that either binning_file or bin_size should be provided
-    error_method: string
-      the method for the computation of error
-      can be "master" or "knox" for now
-   approx_coupling: dict
-   mbb_inv: 2d array
-     the inverse mode coupling matrix, not in use for 2dflat
-   compute_T_only: boolean
-     True to compute only T spectra
-
+     window: so_map
+       the window function of the patch
+     lmax: integer
+       the maximum multipole to consider for the spectra computation
+     spec_name_list:  list
+       the list of  power spectra
+       For example : [split0xsplit0,split0xsplit1,split1xsplit1]
+       note that for computing the error on PS(split0xsplit1) we need PS(split0xsplit0), PS(split0xsplit1), PS(split1xsplit1)
+     ps_dict: dict
+       a dict containing all power spectra
+     binning_file: text file
+       a binning file with three columns bin low, bin high, bin mean
+       note that either binning_file or bin_size should be provided
+     error_method: string
+       the method for the computation of error
+       can be "master" or "knox" for now
+    approx_coupling: dict
+    mbb_inv: 2d array
+      the inverse mode coupling matrix, not in use for 2dflat
+    compute_T_only: boolean
+      True to compute only T spectra
+    transfer_function: str
+      the path to the transfer function
     """
     timer.start("Compute {} error...".format(error_method))
 
@@ -431,6 +512,10 @@ def get_covariance(
                 cov_dict[name][X + Y] += so_cov.symmetrize(ps_dict["%sx%s" % (m1, m2)][X + Y] ** 2)
                 cov_dict[name][X + Y] *= coupling
                 cov_dict[name][X + Y] = np.dot(np.dot(mbb_inv, cov_dict[name][X + Y]), mbb_inv.T)
+                if transfer_function is not None:
+                    _, _, tf, _ = np.loadtxt(transfer_function, unpack=True)
+                    tf = tf[: len(bin_c)]
+                    cov_dict[name][X + Y] /= np.outer(np.sqrt(tf), np.sqrt(tf))
 
     else:
         cov_dict = None
@@ -484,6 +569,9 @@ def compute_ps(
     l_exact=None,
     l_band=None,
     l_toep=None,
+    vk_mask=None,
+    hk_mask=None,
+    transfer_function=None,
 ):
     """Compute spectra
 
@@ -521,8 +609,14 @@ def compute_ps(
       can be "master" or "knox" for now
     compute_T_only: boolean
       True to compute only T spectra, should always be true for data_type= "I"
-    lmax : integer
+    lmax: integer
       the maximum multipole to consider for the spectra computation
+    vk_mask: list
+      the vertical band to filter out from 2D FFT (format is [-lx, +lx])
+    hk_mask: list
+      the horizontal band to filter out from 2D FFT (format is [-ly, +ly])
+    transfer_function: str
+      the path to the transfer function
     """
 
     # Check computation mode
@@ -546,13 +640,20 @@ def compute_ps(
         pspy_utils.create_binning_file(bin_size=bin_size, n_bins=1000, file_name="binning.dat")
         binning_file = "binning.dat"
 
-    car_box, window = create_window(
+    use_kspace_filter = False
+    if vk_mask is not None or hk_mask is not None:
+        if transfer_function is None:
+            raise ValueError("Missing transfer function to correct for kpsace filter")
+        use_kspace_filter = True
+
+    car_box, window, binary = create_window(
         patch,
         maps_info_list,
         apo_radius_survey,
         galactic_mask=galactic_mask,
         source_mask=source_mask,
         compute_T_only=compute_T_only,
+        use_kspace_filter=use_kspace_filter,
     )
 
     mbb_inv = compute_mode_coupling(
@@ -578,6 +679,10 @@ def compute_ps(
         ps_method=ps_method,
         mbb_inv=mbb_inv,
         compute_T_only=compute_T_only,
+        vk_mask=vk_mask,
+        hk_mask=hk_mask,
+        transfer_function=transfer_function,
+        binary=binary,
     )
 
     if ps_method == "2dflat" or error_method is None:
@@ -600,6 +705,7 @@ def compute_ps(
         spectra=spectra,
         mbb_inv=mbb_inv,
         compute_T_only=compute_T_only,
+        transfer_function=transfer_function,
     )
 
     return spectra, spec_name_list, ells, ps_dict, cov_dict

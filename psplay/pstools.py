@@ -282,7 +282,6 @@ def get_filtered_map(map, binary, vk_mask, hk_mask, normalize=False):
             ft[:, id_hk, :] = 0.0
 
     map.data[:] = np.real(enmap.ifft(ft, normalize=normalize))
-
     return map
 
 
@@ -364,7 +363,7 @@ def get_spectra(
             timer.start("SPHT of {} in the patch...".format(os.path.basename(map_info["name"])))
             alms = sph_tools.get_alms(split, window, niter=0, lmax=lmax + 50)
             if use_kspace_filter:
-                alms /= split.data.shape[1] * split.data.shape[2]
+                alms /= np.product(split.data.shape[-2:])
             ht_list += [alms]
             timer.stop()
 
@@ -406,8 +405,11 @@ def get_spectra(
                 )
                 if use_kspace_filter:
                     _, _, tf, _ = np.loadtxt(transfer_function, unpack=True)
-                    for spec in spectra:
-                        ps_dict[spec_name][spec] /= tf[np.where(ells < lmax)]
+                    if compute_T_only:
+                        ps_dict[spec_name] /= tf[np.where(ells < lmax)]
+                    else:
+                        for spec in spectra:
+                            ps_dict[spec_name][spec] /= tf[np.where(ells < lmax)]
 
             elif ps_method == "2dflat":
                 ells, ps_dict[spec_name] = flat_tools.power_from_fft(ht1, ht2, type=type)

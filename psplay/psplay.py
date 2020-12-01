@@ -236,7 +236,7 @@ class App:
                     id=_get_section(imap, "id"),
                     name=_get_section(imap, "file"),
                     data_type=imap.get("data_type", "IQU"),
-                    cal=None,
+                    cal=imap.get("cal", None),
                 )
             )
 
@@ -399,7 +399,13 @@ class App:
         header = widgets.HBox([self.spectra_1d, self.split_1d])
 
         # Config
-        self.use_toeplitz = widgets.Checkbox(value=False, description="Use Toeplitz approx.")
+        self.use_toeplitz = widgets.Checkbox(
+            value=self.plot_config.get("use_toeplitz_approx", False),
+            description="Use Toeplitz approx.",
+        )
+        self.use_kspace_filter = widgets.Checkbox(
+            value=self.plot_config.get("use_kspace_filter", False), description="Use kspace filter"
+        )
         self.bin_size = widgets.IntSlider(
             value=self.plot_config.get("bin_size", 40),
             min=0,
@@ -408,6 +414,8 @@ class App:
             description="Bin size",
         )
         config = widgets.HBox([widgets.VBox([self.use_toeplitz])])
+        if self.data_config.get("filter"):
+            config.children += (widgets.VBox([self.use_kspace_filter]),)
         if not self.data_config.get("binning_file"):
             config.children += (widgets.VBox([self.bin_size]),)
         accordion = widgets.Accordion(children=[config], selected_index=None)
@@ -519,6 +527,15 @@ class App:
                             l_toep=2500 if self.use_toeplitz.value else None,
                         )
                     )
+                    if self.use_kspace_filter.value:
+                        filter_config = self.data_config.get("filter")
+                        kwargs.update(
+                            dict(
+                                vk_mask=filter_config.get("vk_mask"),
+                                hk_mask=filter_config.get("hk_mask"),
+                                transfer_function=filter_config.get("transfer_function"),
+                            )
+                        )
 
                 method = patch.get(ps_method, dict())
                 if method.get("results") and method.get("config") == kwargs:

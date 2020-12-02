@@ -236,7 +236,7 @@ class App:
                     id=_get_section(imap, "id"),
                     name=_get_section(imap, "file"),
                     data_type=imap.get("data_type", "IQU"),
-                    cal=imap.get("cal", None),
+                    cal=imap.get("cal"),
                 )
             )
 
@@ -256,21 +256,50 @@ class App:
     def _add_theory(self):
         self.theory = None
         theory = self.data_config.get("theory", {})
-        theory_file = theory.get("file", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat")
-        if not os.path.exists(theory_file):
-            return
-        clth = {}
-        lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
-            theory_file,
-            unpack=True,
-        )
-        clth["ET"] = clth["TE"]
-        for spec in ["EB", "BE", "BT", "TB"]:
-            clth[spec] = np.zeros(clth["TE"].shape)
-        for spec in list(clth.keys()):
-            if spec not in theory.get("allow", ["TT"]):
-                del clth[spec]
-        self.theory = {"lth": lth, "clth": clth}
+        model = theory.get("model", "camb")
+        if model not in ["camb", "planck"]:
+            raise ValueError("Theory model '{}' is not supported.".format(model))
+
+        if model == "camb":
+            theory_file = theory.get("file", "bode_almost_wmap5_lmax_1e4_lensedCls_startAt2.dat")
+            if not os.path.exists(theory_file):
+                return
+            clth = {}
+            lth, clth["TT"], clth["EE"], clth["BB"], clth["TE"] = np.loadtxt(
+                theory_file,
+                unpack=True,
+            )
+            clth["ET"] = clth["TE"]
+            for spec in ["EB", "BE", "BT", "TB"]:
+                clth[spec] = np.zeros(clth["TE"].shape)
+            lth = {spec: lth for spec in clth.keys()}
+
+            # Set ell range and only show allowed spectra
+            for spec in list(clth.keys()):
+                if spec not in theory.get("allow", ["TT"]):
+                    del lth[spec]
+                    del clth[spec]
+                    continue
+                lrange = np.where(
+                    (theory.get("lmin", 2) < lth[spec]) & (lth[spec] < theory.get("lmax", 1000))
+                )
+                lth[spec] = lth[spec][lrange]
+                clth[spec] = clth[spec][lrange]
+
+        elif model == "planck":
+            lth, clth, clth_minus, clth_plus = {}, {}, {}, {}
+            for k, v in theory.get("files", {}).items():
+                lth[k], clth[k], clth_minus[k], clth_plus[k], *best_fit = np.loadtxt(v, unpack=True)
+
+        self.theory = {
+            "label": theory.get("label", "theory"),
+            "color": theory.get("color", "gray"),
+            "lth": lth,
+            "clth": clth,
+        }
+
+        if model == "planck":
+            self.theory.update({"clth_minus": clth_minus, "clth_plus": clth_plus})
 
     def _add_plot(self):
         # Main
@@ -288,7 +317,9 @@ class App:
             value=self.plot_config.get("compute_2d", True), description="2D spectra", layout=layout
         )
         self.compute_T_only = widgets.Checkbox(
-            value=False, description="Only temperature", layout=layout
+            value=self.plot_config.get("compute_only_temperature", False),
+            description="Only temperature",
+            layout=layout,
         )
         self.lmax = widgets.IntSlider(
             value=self.plot_config.get("lmax", 1000),
@@ -369,13 +400,11 @@ class App:
                         [
                             dict(
                                 label="Linear Scale",
-                                method="update",
-                                args=[{"visible": [True] * 100}, {"yaxis": {"type": "linear"}}],
+                                method="relayout",
+                                args=[{"yaxis.type": "linear"}],
                             ),
                             dict(
-                                label="Log Scale",
-                                method="update",
-                                args=[{"visible": [True] * 100}, {"yaxis": {"type": "log"}}],
+                                label="Log Scale", method="relayout", args=[{"yaxis.type": "log"}]
                             ),
                         ]
                     ),
@@ -505,8 +534,8 @@ class App:
         ):
             if not compute:
                 continue
-            for ipatch, (name, patch) in enumerate(self.patches.items()):
-                print("Compute patch #{} for '{}' method".format(ipatch, ps_method))
+            for name, patch in self.patches.items():
+                print("Compute {} for '{}' method".format(name, ps_method))
 
                 kwargs = dict(
                     ps_method=ps_method,
@@ -598,7 +627,41 @@ class App:
             self.fig_1d.data = []
 
         # Update theory & data
-        ipatch = 0
+        if self.theory is not None:
+            x, y = [], []
+            yerr_minus, yerr_plus = [], []
+            if spec in self.theory.get("clth"):
+                x = self.theory.get("lth").get(spec)
+                y = self.theory.get("clth").get(spec)
+                yerr_minus = (
+                    self.theory.get("clth_minus").get(spec) if "clth_minus" in self.theory else []
+                )
+                yerr_plus = (
+                    self.theory.get("clth_plus").get(spec) if "clth_plus" in self.theory else []
+                )
+            if create:
+                self.fig_1d.add_scatter(
+                    name=self.theory.get("label"),
+                    x=x,
+                    y=y,
+                    mode="markers" if "clth_minus" in self.theory else "lines",
+                    line=dict(color=self.theory.get("color")),
+                    error_y=dict(
+                        type="data",
+                        symmetric=False,
+                        array=yerr_plus,
+                        arrayminus=yerr_minus,
+                        color=self.theory.get("color"),
+                    ),
+                )
+            else:
+                with self.fig_1d.batch_update():
+                    self.fig_1d.data[0].x = x
+                    self.fig_1d.data[0].y = y
+                    self.fig_1d.data[0].error_y.array = yerr_plus
+                    self.fig_1d.data[0].error_y.arrayminus = yerr_minus
+
+        idata = 0 if self.theory is None else 1
         for name, patch in self.patches.items():
             method = patch.get("master", dict())
             results = method.get("results")
@@ -620,33 +683,14 @@ class App:
                 )
             else:
                 with self.fig_1d.batch_update():
-                    self.fig_1d.data[ipatch].x = x
-                    self.fig_1d.data[ipatch].y = y
-                    self.fig_1d.data[ipatch].error_y.array = yerr
-                ipatch += 1
-
-        if self.theory is not None:
-            x = []
-            y = []
-            if spec in self.theory.get("clth"):
-                x = self.theory.get("lth")[: self.lmax.value]
-                y = self.theory.get("clth")[spec][: self.lmax.value]
-            if create:
-                self.fig_1d.add_scatter(
-                    name="theory",
-                    x=x,
-                    y=y,
-                    mode="lines",
-                    line=dict(color="gray"),
-                )
-            else:
-                with self.fig_1d.batch_update():
-                    self.fig_1d.data[-1].x = x
-                    self.fig_1d.data[-1].y = y
+                    self.fig_1d.data[idata].x = x
+                    self.fig_1d.data[idata].y = y
+                    self.fig_1d.data[idata].error_y.array = yerr
+                idata += 1
 
         with self.fig_1d.batch_update():
             self.fig_1d.layout.title = split_name
-            self.fig_1d.layout.yaxis.title = r"$D_\ell^\mathrm{%s}$" % spec
+            self.fig_1d.layout.yaxis.title = r"$D_\ell^\mathrm{%s}\;[\mu\mathrm{K}^2]$" % spec
 
     def _update_2d_plot(self, _, create=False):
         split_name = self.split_2d.value

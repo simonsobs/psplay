@@ -28,13 +28,13 @@ jobs:
         channels: conda-forge
 
     - name: Apt-get packages
-      if: matrix.os == "ubuntu-latest"
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get -y install libfftw3-dev
 
     - name: Brew packages
-      if: matrix.os == "macos-latest"
+      if: matrix.os == 'macos-latest'
       run: |
         brew install gfortran
         brew install fftw
@@ -49,7 +49,7 @@ jobs:
       run: pip install .
 
     - name: Install JupyterLab extension (Only on Linux for saving time)
-      if: matrix.os == "ubuntu-latest"
+      if: matrix.os == 'ubuntu-latest'
       shell: bash -l {0}
       run: jupyter labextension install js
 
@@ -66,4 +66,4 @@ jobs:
 
     - name: Import check
       shell: bash -l {0}
-      run: python -c "import psplay"
+      run: python -c 'import psplay'

@@ -16,7 +16,7 @@ All the specific javascript library developed for ``psplay`` is done by `Sigurd 
    :target: https://pypi.python.org/pypi/psplay/
 .. image:: https://img.shields.io/npm/v/jupyter-leaflet-car
    :target: https://www.npmjs.com/package/jupyter-leaflet-car
-.. image:: https://img.shields.io/github/workflow/status/simonsobs/psplay/Tests/master
+.. image:: https://img.shields.io/github/actions/workflow/status/simonsobs/psplay/main.yml
    :target: https://github.com/simonsobs/psplay/actions
 
 Examples
@@ -64,7 +64,7 @@ Then, you can run the ``simonsobs/psplay`` image by doing
 
 .. code:: shell
 
-   $ docker run --rm -p 8888:8888 simonsobs/psplay
+   $ docker run --rm -p 8888:8888 ghcr.io/simonsobs/psplay
 
 After pulling the ``docker`` image, a JupyterLab instance should start. If your web browser does not
 automatically load the web page, you can copy-paste the JupyterLab URL.

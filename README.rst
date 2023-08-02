@@ -72,48 +72,49 @@ automatically load the web page, you can copy-paste the JupyterLab URL.
 You can bind a local directory to make it available within the ``docker`` container with the ``-v``
 flag (see https://docs.docker.com/storage/bind-mounts for more details).
 
-Using at ``NERSC``
-------------------
+..
+   Using at ``NERSC``
+   ------------------
 
-On NERSC machines, you can install ``psplay`` within a ``conda`` environment but you can also use a
-common installation for Simons Observatory people (*i.e.* people belonging to ``sobs`` group)
-without need to redo the long installation process.
+   On NERSC machines, you can install ``psplay`` within a ``conda`` environment but you can also use a
+   common installation for Simons Observatory people (*i.e.* people belonging to ``sobs`` group)
+   without need to redo the long installation process.
 
-First you need to log to ``cori.nersc.gov`` machines by enabling port forward to your local machine
+   First you need to log to ``cori.nersc.gov`` machines by enabling port forward to your local machine
 
-.. code:: shell
+   .. code:: shell
 
-   $ ssh -L 8888:localhost:8888 user@cori.nersc.gov
+      $ ssh -L 8888:localhost:8888 user@cori.nersc.gov
 
-Everything passing *via* port 8888 in ``NERSC`` will be forwarded to your local machine and you will
-be able to grab the JupyterLab instance within your local web browser.
+   Everything passing *via* port 8888 in ``NERSC`` will be forwarded to your local machine and you will
+   be able to grab the JupyterLab instance within your local web browser.
 
-Given a successful connection, you must load the latest ``python`` module
+   Given a successful connection, you must load the latest ``python`` module
 
-.. code:: shell
+   .. code:: shell
 
-   $ module load python
+      $ module load python
 
-and then you can load the ``conda`` environment with the whole software suite for ``psplay``
+   and then you can load the ``conda`` environment with the whole software suite for ``psplay``
 
-.. code:: shell
+   .. code:: shell
 
-   $ source activate /global/cscratch1/sd/xgarrido/psplay/env
+      $ source activate /global/cscratch1/sd/xgarrido/psplay/env
 
-Finally, you can copy the ``/global/cscratch1/sd/xgarrido/psplay/examples/minimal`` directory to
-your home or scratch directory. For example purpose, this directory holds simulation files already
-converted into ``Leaflet`` tiles. Then, fire a JupyterLab instance by typing
+   Finally, you can copy the ``/global/cscratch1/sd/xgarrido/psplay/examples/minimal`` directory to
+   your home or scratch directory. For example purpose, this directory holds simulation files already
+   converted into ``Leaflet`` tiles. Then, fire a JupyterLab instance by typing
 
-.. code:: shell
+   .. code:: shell
 
-   $ cd /your/owned/directory
-   $ cp -r /global/cscratch1/sd/xgarrido/psplay/examples/minimal .
-   $ jupyter lab --port 8888 --no-browser minimal_working_example.ipynb
+      $ cd /your/owned/directory
+      $ cp -r /global/cscratch1/sd/xgarrido/psplay/examples/minimal .
+      $ jupyter lab --port 8888 --no-browser minimal_working_example.ipynb
 
-Copy-paste the URL into your local browser and run the Jupyter notebook.
+   Copy-paste the URL into your local browser and run the Jupyter notebook.
 
-If port 8888 is already in use, JupyterLab will try another one and then breaks the port forward. In
-this case you should restart the ssh session with another port.
+   If port 8888 is already in use, JupyterLab will try another one and then breaks the port forward. In
+   this case you should restart the ssh session with another port.
 
 Installation from sources
 -------------------------

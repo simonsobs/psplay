@@ -62,9 +62,12 @@ libraries and everything compiled and installed. You should first install `docke
 
 Then, you can run the ``simonsobs/psplay`` image by doing
 
+..
+   $ docker run --rm -p 8888:8888 ghcr.io/simonsobs/psplay:master
+
 .. code:: shell
 
-   $ docker run --rm -p 8888:8888 ghcr.io/simonsobs/psplay:master
+   $ docker run --rm -p 8888:8888 simonsobs/psplay:latest
 
 After pulling the ``docker`` image, a JupyterLab instance should start. If your web browser does not
 automatically load the web page, you can copy-paste the JupyterLab URL.

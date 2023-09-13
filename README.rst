@@ -64,7 +64,7 @@ Then, you can run the ``simonsobs/psplay`` image by doing
 
 .. code:: shell
 
-   $ docker run --rm -p 8888:8888 ghcr.io/simonsobs/psplay
+   $ docker run --rm -p 8888:8888 ghcr.io/simonsobs/psplay:master
 
 After pulling the ``docker`` image, a JupyterLab instance should start. If your web browser does not
 automatically load the web page, you can copy-paste the JupyterLab URL.
